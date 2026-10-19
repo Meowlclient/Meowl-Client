@@ -1,0 +1,370 @@
+* = Dauer-Emote (läuft, bis du dich bewegst	* = looping emote (runs until you move
+„Singleplayer“ / „Multiplayer“ / „Im Menü“	"Singleplayer" / "Multiplayer" / "In menu"
+„X hat das Spiel betreten/verlassen“ filtern	Filter "X joined/left the game"
+„X wurde von Y getötet“ usw. filtern	Filter "X was slain by Y" etc.
+⏳ wartet auf Bestätigung	⏳ waiting for confirmation
+⌖ Standort teilen	⌖ Share location
+⌫ Radierer	⌫ Eraser
+▣ Füllen	▣ Fill
+▶ Spielen (du beginnst	▶ Play (you start
+◉ Pipette	◉ Picker
+● KAMERA AKTIV – verbinde mit Meowl Server	● CAMERA ON – connect to the Meowl Server
+● KAMERA AKTIV (nur du	● CAMERA ON (only you
+● LIVE – Meowl-Spieler sehen deine Kamera	● LIVE – Meowl players see your camera
+● nicht verbunden	● not connected
+● nur lokal	● local only
+← Allgemein	← General
+↻ Neu laden	↻ Reload
+↻ Nochmal	↻ Again
+↺ Planeten	↺ Planets
+╱ Linie	╱ Line
+★ am Namen	★ at name
+☐ Kasten	☐ Box
+☑ Kasten	☑ Box
+♥ Freunde	♥ Friends
+✎ HUD bearbeiten	✎ Edit HUD
+✎ Nametags bearbeiten	✎ Edit nametags
+✎ Pinsel	✎ Brush
+✔ Abstand	✔ Distance
+✔ Anschauen	✔ Look at
+✔ befreundet	✔ friends
+✔ kopiert	✔ copied
+✕ Entfernen	✕ Remove
+✘ Abstand	✘ Distance
+✘ Anschauen	✘ Look at
+✦ Armor Trim Vorschau	✦ Armor Trim Preview
+⚑ Angepinnt	⚑ Pinned
+⚑ Aufgeben	⚑ Resign
+⚠ auch	⚠ also
+⚠ NOTRUF	⚠ EMERGENCY
+⚠ Notruf an	⚠ Emergency on
+• Beim Tippen erscheinen Spieler dieses Servers	• Players on this server appear while typing
+• Freunde bekommen einen ★ am Namensschild	• Friends get a ★ on their nametag
+• Freund-Taste unter ⚙ Mehr festlegen	• Set the friend key under ⚙ More
+• Gegenseitig befreundet = Standort teilen möglich	• Mutual friends = location sharing possible
+• Namen oben eingeben → Enter fügt hinzu	• Type a name above → Enter adds it
+• Server IP • Commands • Ideen	• Server IP • Commands • Ideas
+• Taste	• Key
+⧉ Name kopieren	⧉ Copy name
+⚒ Amboss-Rechner	⚒ Anvil calculator
+⚙ Client & Updates	⚙ Client & Updates
+⚙ Mehr	⚙ More
+0 % = schwarz-weiß, 100 % = normal, 200 % = doppelt so kräftig	0 % = black & white, 100 % = normal, 200 % = twice as vivid
+0 = eckig	0 = square
+1 Runde	1 round
+15 s gültig	valid for 15 s
+2. Chat	2nd chat
+2. Chat (gefiltert	2nd chat (filtered
+50-Züge-Regel – Remis	50-move rule – draw
+Ab und zu wird die Brücke getroffen: Erschütterung, Funken und roter Alarm	Now and then the bridge gets hit: shaking, sparks and red alert
+Abbaulähmung	Mining Fatigue
+abgelehnt	declined
+abklatschen	high-five
+Ablehnen	Decline
+Abstand	Distance
+Abstand der Linien zur Mitte	Gap of the lines from the center
+Abstand der Symbole/Tiers zum Namen	Gap between icons/tiers and the name
+Abstand wächst beim Laufen, Sprinten, Springen und nach Schlägen	Gap grows while walking, sprinting, jumping and after hits
+Abstand zum Namen	Gap to the name
+Abstand zwischen den Teilen	Gap between the parts
+Adresse im lokalen Netz – blockiert	Address in local network – blocked
+AFK-Dauer anzeigen	Show AFK duration
+AFK-Sternenschlacht konnte nicht erzeugt werden	AFK space battle could not be created
+AKTIONEN	ACTIONS
+Aktiv	Active
+AKTIV	ON
+aktualisiert	updated
+aktuelle Version bleibt	current version stays
+Akzent	Accent
+Album-Cover neben dem Titel (Windows: über die iTunes-Suche	Album cover next to the title (Windows: via iTunes search
+Alle	All
+Alle gespeicherten Tier-Daten verwerfen und neu laden	Discard all saved tier data and reload
+Alle Items	All items
+Alle Keybinds verwalten + eigene Befehle auf Tasten legen	Manage all keybinds + bind your own commands to keys
+alle mit	all with
+Alle Shulker-Kisten	All shulker boxes
+Alle Sounds aus	All sounds off
+Alle Teile	All parts
+Alle Tierlists anzeigen, wenn du einen Spieler anschaust	Show all tier lists when you look at a player
+Alle Vanilla-Armor-Trims in 3D an deinem Charakter ausprobieren: Rüstung, Muster und Material – öffnet direkt die Vorschau	Try all vanilla armor trims in 3D on your character: armor, pattern and material – opens the preview directly
+Alles	Everything
+Alles zurücksetzen	Reset everything
+Allgemein	General
+Als Block Image	As Block Image
+Als Freund hinzufügen	Add as friend
+alt	old
+Alt – jetzt im Nametag-Editor	Old – now in the nametag editor
+Alte Liste (wird ins Modul „Freunde“ übernommen	Old list (moved to the "Friends" module
+Ältere Addon-Module	Older addon modules
+Am Boden anschauen	Look at on the ground
+Am Namen	At name
+Am Namen markieren	Mark at name
+AN	ON
+An andere senden	Send to others
+an Hotbar	at hotbar
+An welchem Arm die Uhr sitzt	Which arm the watch is on
+An: läuft immer um dich herum. Aus: bleibt dort, wo du sie eingeschaltet hast	On: always walks around you. Off: stays where you turned it on
+An: nur anzeigen, wenn Sprint/Sneak an ist	On: only show when sprint/sneak is on
+An: Rechtsklick auf eine Wand platziert das Bild	On: right-click on a wall places the image
+Andere dürfen dich zum High-Five einladen	Others may invite you to a high-five
+Andere Farbe, solange ein Spieler/Mob anvisiert ist	Different color while a player/mob is targeted
+Andere Meowl-Spieler sehen dein Pet um dich herumlaufen	Other Meowl players see your pet walking around you
+Andere Meowl-Spieler sehen deine Uhr am Arm	Other Meowl players see your watch on your arm
+Andere Spieler	Other players
+Andere Spieler mit Meowl Client sehen deine Emotes (braucht den Meowl Server	Other players with Meowl Client see your emotes (needs the Meowl Server
+Änderungen werden sofort gespeichert  ·  Rechtsklick auf Regler: Standardwert  ·  ESC: schließen	Changes are saved instantly  ·  Right-click a slider: default value  ·  ESC: close
+Anfrage gesendet	Request sent
+Anfrage von	Request from
+Anfragen	Requests
+Anfragen erlauben	Allow requests
+Angepasste Einzel-Sounds (im Fenster "Sounds suchen" bearbeiten	Customized single sounds (edit in the "Search sounds" window
+angeschauten Spieler (ent)freunden	(un)friend the player you look at
+Angeschauten Spieler als Freund hinzufügen bzw. entfernen	Add or remove the player you look at as a friend
+Animation läuft weiter, bis du die Taste erneut drückst	Animation keeps running until you press the key again
+Animationen	Animations
+Animationsdauer	Animation duration
+Annehmen	Accept
+annehmen  ·  /meowl clap decline	accept  ·  /meowl clap decline
+Antwort zu groß	Response too large
+anzahl	count
+Anzahl	Count
+Anzeige	Display
+Anzeige, bis der nächste Schlag voll lädt	Shows until the next hit is fully charged
+Anzeigen	Show
+Anzeigen & Einstellungen	Displays & settings
+Anzeigen im Spiel-Bildschirm	Displays on the game screen
+Anzeigetext im Stil „Text“ (danach folgt AN/AUS	Display text in the "Text" style (followed by ON/OFF
+Applaus	Applause
+AppleSkin-artig: Sättigung, Essens-Vorschau und Hunger-Werte an der Hungerleiste	AppleSkin-like: saturation, food preview and hunger values on the hunger bar
+Arm heben und auf die Uhr schauen	Raise your arm and look at the watch
+Armbanduhr am Handgelenk – inkl. luxuriöser GEQI Watch. Inspect-Taste zeigt die deutsche Uhrzeit	Wristwatch on your wrist – incl. luxurious GEQI Watch. Inspect key shows the German time
+Arme verschränken	Cross arms
+Arm-Haltung auch am Spielermodell (3rd Person / Partner	Arm pose also on the player model (3rd person / partner
+Armor Trim Preview öffnen	Open Armor Trim Preview
+Armor Trim Preview: erst eine Welt betreten	Armor Trim Preview: join a world first
+Arm-Pose sichtbar	Arm pose visible
+Art der Animation	Kind of animation
+Atmosphärische Geräusche (keine Musik	Atmospheric sounds (no music
+Auch bei deinem eigenen Tod	Also on your own death
+Auch bei mir	Also for me
+Auch bei offenem Debug-Bildschirm (F3) das eigene Fadenkreuz statt der Achsen zeigen	Show your own crosshair instead of the axes even with the debug screen (F3) open
+Auch bei verstecktem Namen	Even with hidden name
+Auch leere Rüstungsslots als Platzhalter	Also empty armor slots as placeholders
+Auch Schwerter anderer Spieler als Energieschwert zeigen (nur bei dir	Also show other players' swords as energy swords (only for you
+auch Soft 17	also soft 17
+Auf diesem Server	On this server
+Aufbau der Namenszeile (Nametag-Editor	Layout of the name line (nametag editor
+aufgegeben	resigned
+Aufladen … loslassen im Takt	Charge … release on the beat
+Auflösung	Resolution
+Auflösung für andere (max. 320×240	Resolution for others (max. 320×240
+Auflösung zu groß (max. 4096×4096	Resolution too large (max. 4096×4096
+Aufnahme-Auflösung	Capture resolution
+Aufstehen bei Bewegung	Stand up on movement
+aus	off
+Aus	Off
+AUS	OFF
+aus der Freundesliste entfernt	removed from the friend list
+Aus: auch die Items aus der Liste unten	Off: also the items from the list below
+Aus: jede Animation hat ihre passende Standard-Dauer	Off: every animation has its own default duration
+Ausblenddauer	Fade-out duration
+Ausblenden nach	Hide after
+ausgeblendet	hidden
+Ausgeblendet	Hidden
+Auslöser	Trigger
+Ausrichtung	Alignment
+Aussehen der Anzeige	Look of the display
+Aussehen der Karten	Look of the cards
+Aussehen des Pets	Look of the pet
+Austeilen  [Leertaste	Deal  [Space
+Automatisch updaten	Update automatically
+Balken	Bars
+Bauloo Styles ist nicht installiert	Bauloo Styles is not installed
+Bauloo-Styles-Menü konnte nicht geöffnet werden	Bauloo Styles menu could not be opened
+Beam anzeigen	Show beam
+Beam-Höhe	Beam height
+Bearbeiten	Edit
+Beendet Minecraft sauber – das Update wird danach automatisch eingespielt	Closes Minecraft cleanly – the update is installed automatically afterwards
+Befehl	Command
+befehl oder Chat-Text	command or chat text
+Befehle	Commands
+Befehls-Binds (im Fenster "Binds verwalten" bearbeiten	Command binds (edit in the "Manage binds" window
+beginnt	starts
+Bei 0 ausblenden	Hide at 0
+Bei anderen	For others
+Bei anderen Spielern	For other players
+Bei jedem Pop und Tod eine kurze Meldung im Chat	A short chat message on every pop and death
+Bei mir	For me
+Bei Pause ausblenden	Hide when paused
+Bei wenigen Totems blinken	Blink when few totems are left
+Beide geklatscht	Both clapped
+Beides	Both
+Beim Start und danach regelmäßig im Hintergrund prüfen	Check on start and regularly in the background
+Beim Sterben automatisch einen Waypoint setzen	Automatically set a waypoint when you die
+benutzen	use
+Berechnet Amboss-Kosten exakt wie Vanilla und findet die günstigste Reihenfolge – öffnet direkt den Rechner	Calculates anvil costs exactly like vanilla and finds the cheapest order – opens the calculator directly
+BEREIT	READY
+Beste	Best
+Beste Serie	Best streak
+Bester (alle	Best (all
+bester Tier	best tier
+Bester Tier	Best tier
+Bestimmtes Kit	Specific kit
+Best-of-N: wer zuerst die Mehrheit der Runden gewinnt	Best-of-N: whoever wins most rounds first
+Betritt eine Welt – die Verzauberungsdaten kommen vom Server	Join a world – the enchantment data comes from the server
+bewegen oder erneut auslösen zum Beenden	move or trigger again to stop
+Bewegung	Movement
+Bewegung beendet Emote	Movement ends emote
+bild	image
+Bild	Image
+Bild entfernt	Image removed
+Bild horizontal spiegeln	Mirror image horizontally
+Bild im HUD	Image in HUD
+Bild nicht verzerren (Rand bleibt frei	Don't stretch the image (border stays empty
+Bild platziert – alle Meowl-Spieler hier sehen es	Image placed – all Meowl players here see it
+Bild platziert (nur lokal – ohne Meowl Server sehen es andere nicht	Image placed (local only – without Meowl Server others can't see it
+Bild wurde skaliert	image was scaled
+Bild zu groß (max. 8 MB	Image too large (max. 8 MB
+Bilder	Images
+Bilder (z.B. Imgur) an Blockwände hängen – für alle Meowl-Spieler sichtbar	Hang images (e.g. Imgur) on block walls – visible to all Meowl players
+Bilder gehen nur an senkrechte Wände	Images only work on vertical walls
+Bilder nur bis zu dieser Entfernung zeichnen	Only draw images up to this distance
+Bilder pro Sekunde (lokal	Frames per second (local
+Bilder pro Sekunde für andere	Frames per second for others
+Binds verwalten	Manage binds
+Bis zu dieser Entfernung	Up to this distance
+Bis zu welcher Entfernung Spieler angezeigt werden	Up to which distance players are shown
+Bist du AFK, startet eine Szene: Wüstenschlacht (du sitzt auf einem Felsen) oder Sternenschlacht (du stehst auf der Brücke eines Raumschiffs) – rein clientseitig	When you're AFK a scene starts: desert battle (you sit on a rock) or space battle (you stand on a spaceship's bridge) – client-side only
+Blackjack gegen den Meowl-Dealer – nur mit Spielgeld, mit Statistik und Animationen	Blackjack against the Meowl dealer – play money only, with stats and animations
+Blackjack zahlt 3:2	Blackjack pays 3:2
+Blackjack-Statistik zurückgesetzt	Blackjack stats reset
+Blackjack-Tisch öffnen	Open blackjack table
+Blau	Blue
+Blauanteil der Farbe	Blue part of the color
+Blendet der Server den Namen aus, zeigt Meowl ihn selbst (sonst nur Symbole links/rechts vom Namensplatz	If the server hides the name, Meowl shows it itself (otherwise only icons left/right of the name spot
+Blickwinkel	View angle
+Blindheit	Blindness
+Block Images: Platzier-Modus	Block Images: placement mode
+Block-Anzeige (Schild	Block display (sign
+Blöcke	blocks
+Blöcken	blocks
+Block-Images-Liste ist voll	Block Images list is full
+Bogen	Bow
+Böses Omen	Bad Omen
+Bot beginnt	Bot starts
+Bot denkt	Bot is thinking
+braucht Hilfe	needs help
+Breite	Width
+Breite der Facecam in Blöcken	Width of the facecam in blocks
+Breite des 2. Chats	Width of the 2nd chat
+Breite des Randes	Width of the border
+Breite des Strahls	Width of the beam
+Breite im HUD (Höhe passt sich an	Width in the HUD (height adjusts
+Brustplatte	Chestplate
+Buch	Book
+Cache leeren	Clear cache
+Charakter	Character
+Charakter setzt sich	Character sits down
+Chips auffüllen	Refill chips
+Clap braucht eine Verbindung zum Meowl Server (Client → Meowl Server	Clap needs a connection to the Meowl Server (Client → Meowl Server
+Clap ist aus (Menü → Meowl → Clap	Clap is off (Menu → Games → Clap
+Combo-Zähler	Combo counter
+Config konnte nicht geladen werden – Defaults werden verwendet	Config could not be loaded – using defaults
+Config konnte nicht gespeichert werden	Config could not be saved
+Cooldown abdunkeln	Darken cooldown
+Countdown- und Klatsch-Geräusche	Countdown and clap sounds
+Danach Minecraft neu starten	Then restart Minecraft
+Darstellung	Appearance
+Darstellung der Welt und von Spielern	Rendering of the world and players
+darüber	above
+Darüber	Above
+Das Item in deiner Hand zur Liste hinzufügen	Add the item in your hand to the list
+Das Mausrad wechselt nicht mehr den Hotbar-Slot – kein versehentliches Wegscrollen im Kampf	The mouse wheel no longer changes the hotbar slot – no accidental scrolling in fights
+Datei größer als angekündigt	File larger than announced
+Dauer	Duration
+davor	before
+Dealer ist dran	Dealer's turn
+Dealer nimmt bei 17 mit Ass (als 11) noch eine Karte	Dealer takes another card on 17 with an ace (as 11)
+Dealer zieht bei Soft 17	Dealer hits on soft 17
+Dealer zieht bis 17	Dealer draws to 17
+Deckkraft	Opacity
+Deckkraft des Fadenkreuzes	Opacity of the crosshair
+Deckkraft des Namens	Opacity of the name
+Deckkraft des Strahls	Opacity of the beam
+Dein Charakter setzt sich auf den Felsen (aus = er steht	Your character sits on the rock (off = standing
+Dein eigener Name über dir in der 3. Person (F5) – mit Meowl-Symbol und Tiers, voll einstellbar	Your own name above you in third person (F5) – with Meowl icon and tiers, fully customizable
+Deine Bilder: Link, Größe in Blöcken, sichtbar/ausgeblendet. Der Kreis wählt das Bild zum Platzieren	Your images: link, size in blocks, visible/hidden. The circle selects the image to place
+Deine eigenen Pops in der Liste	Your own pops in the list
+Deine Freunde	Your friends
+Deine Freunde (Spielernamen). Wird gespeichert und von allen Modulen genutzt	Your friends (player names). Saved and used by all modules
+Deine Freunde aus dem Modul „Freunde“ (gegenseitig/online	Your friends from the "Friends" module (mutual/online
+Deine Kamera für Meowl-Spieler auf diesem Server sichtbar machen (braucht Meowl Server	Make your camera visible to Meowl players on this server (needs Meowl Server
+Deine Position in der jeweils anderen Dimension im HUD	Your position in the other dimension in the HUD
+Deine Tiers am Namen (Auswahl links/rechts im Modul „Tiers“	Your tiers at your name (choose left/right in the "Tiers" module
+Deine Tiers dauerhaft im HUD (Position im HUD-Editor	Your tiers permanently in the HUD (position in the HUD editor
+Deine Totems und die Totem-Pops aller Spieler (Zähler setzt sich nach dem Tod zurück	Your totems and all players' totem pops (counter resets after death
+Deine zentrale Freundesliste: suchen, hinzufügen, verwalten – genutzt von Friend Locator, Nametags und mehr	Your central friend list: search, add, manage – used by Friend Locator, nametags and more
+Deinen Namen über dir zeigen	Show your name above you
+Der Bot beginnt	The bot starts
+Der Meowl Server ist zu alt – bitte Server-Update einspielen	The Meowl Server is too old – please install the server update
+Der normale grüne/rote Balken am Item	The normal green/red bar on the item
+Dezenter Text während der Szene	Subtle text during the scene
+Diamant	Diamond
+Diamanten und Diamant-Ausrüstung	Diamonds and diamond gear
+Dicke	Thickness
+Die beiden Armeen kämpfen (aus = nur Landschaft	The two armies fight (off = landscape only
+Die Vanilla-Zeilen „… x12 / und 5 weitere“ durch das Raster ersetzen	Replace the vanilla lines "… x12 / and 5 more" with the grid
+Diese Einladung ist abgelaufen	This invitation has expired
+Diese Items lassen sich auch inspizieren	These items can also be inspected
+Diese Tasten beenden AFK nicht und setzen den Timer nicht zurück (z.B. F2 für Screenshots	These keys don't end AFK and don't reset the timer (e.g. F2 for screenshots
+Dieser Server	This server
+Dinge in der Welt	Things in the world
+Discord hat die Verbindung abgelehnt	Discord refused the connection
+Discord hat die Verbindung geschlossen	Discord closed the connection
+Discord läuft nicht	Discord is not running
+Discord nicht erreichbar	Discord not reachable
+Download fehlgeschlagen	Download failed
+Drehen	Rotate
+Dreht das Fadenkreuz (45° = X-Form	Rotates the crosshair (45° = X shape
+Drehung	Rotation
+Dreifache Wiederholung – Remis	Threefold repetition – draw
+Du	You
+DU	YOU
+du beginnst	you start
+Du bist dran	Your turn
+Du bist schon in einem Clap	You are already in a clap
+Du bist schon in einem Duell	You are already in a duel
+du gewinnst	you win
+Du gewinnst	You win
+Du hast aufgegeben	You resigned
+Du hast die neueste Version	You have the latest version
+Du spielst Schwarz	You play black
+Du spielst Weiß und beginnst	You play white and start
+duel <spieler> – Sheriff Duel herausfordern	duel <player> – challenge to a Sheriff Duel
+Duell ablehnen	Decline duel
+Duell annehmen	Accept duel
+Duell-Modus mit Sheriff, Bubble und Deckungen – nur zwischen Meowl-Spielern	Duel mode with sheriff, bubble and cover – only between Meowl players
+Dunkelheit	Darkness
+Dunkler Hintergrund hinter den Tiers (wie beim Namen	Dark background behind the tiers (like the name
+Dunkler Kasten hinter dem Namen (wie Vanilla	Dark box behind the name (like vanilla
+Dunkler Kasten hinter der Anzeige	Dark box behind the display
+Dynamik & Zustände	Dynamics & states
+Dynamik-Stärke	Dynamics strength
+Dynamisch	Dynamic
+Ecken	Corners
+Ecken, wenn ein Block anvisiert ist	Corners when a block is targeted
+Ecken, wenn ein Wesen anvisiert ist	Corners when an entity is targeted
+Editor öffnen	Open editor
+Effekte	Effects
+Effekt-Stärke	Effect strength
+Eigene Adresse	Own address
+Eigene Application-ID	Own application ID
+Eigene Dauer	Custom duration
+Eigene Effekte	Own effects
+Eigene Effekte (HUD	Own effects (HUD
+Eigene Energieschwert-Sounds oder Vanilla-Sounds (Leuchtfeuer/Dreizack	Custom energy sword sounds or vanilla sounds (beacon/trident
+Eigene Farben	Custom colors
+Eigene Items	Custom items
+Eigene Pops	Own pops
+Eigene Tiers	Own tiers
+Eigene Tiers (keine Daten	Own tiers (no data

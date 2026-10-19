@@ -1,0 +1,53 @@
+// Meowl Client – Windows-Build mit Gradle/Loom (ersetzt build.sh).
+// Ergebnis: dist/meowl-client-<version>.jar  (Version aus fabric.mod.json)
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+def modJson = new groovy.json.JsonSlurper().parse(file('project/src/main/resources/fabric.mod.json'))
+version = modJson.version
+group = 'com.lennart.nebula'
+
+base {
+    archivesName = 'meowl-client-mc26.3'
+}
+
+sourceSets {
+    main {
+        java.srcDirs = ['project/src/main/java']
+        resources.srcDirs = ['project/src/main/resources']
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    // webcam-capture/bridj liegen schon als eingebettete Jars in den Ressourcen
+    compileOnly files('project/src/main/resources/META-INF/jars/webcam-capture-0.3.12.jar',
+                      'project/src/main/resources/META-INF/jars/bridj-0.7.0.jar')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+    it.options.compilerArgs += ['-Xmaxerrs', '5000', '-Xdiags:verbose']
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+// fertige Jar nach dist/ kopieren
+tasks.register('dist', Copy) {
+    dependsOn jar
+    from jar.archiveFile
+    into 'dist'
+}
+build.finalizedBy 'dist'
+
+// tempor�r: Klassenpfad ausgeben (f�r Pr�fwerkzeuge)
+tasks.register('printCp') {
+    doLast { file('build/cp.txt').text = sourceSets.main.compileClasspath.asPath }
+}

@@ -1,0 +1,11 @@
+mcpvp_*.png und subtiers_*.png stammen aus dem offiziellen TierTagger-Projekt von MCTiers
+(https://github.com/mctiers-dev/TierTagger, Copyright (c) 2025 MCTiers, mctiers.com)
+und stehen unter der Mozilla Public License 2.0 (https://mozilla.org/MPL/2.0/).
+Sie wurden nur verkleinert. MCTiers wurde 2026 in MCPVP überführt und nutzt dasselbe Pokal-Logo.
+
+pvptiers_*.png ist das Logo von PvPTiers (https://pvptiers.com) und dient nur als Quellenangabe
+für die angezeigten PvPTiers-Daten.
+
+mctiers_*.png ist eine eingefärbte (Sepia, „Legacy“) Variante von mcpvp_*.png und steht ebenfalls
+unter der MPL 2.0. Die Kit-Icons der Tierlists werden zur Laufzeit von mcpvp.com geladen
+(nur Anzeige als Quellenangabe, nicht im Mod enthalten).

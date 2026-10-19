@@ -1,0 +1,50 @@
+Vanilla-Todesanimation aus	Disable Vanilla Death Animation
+Spieler kippen beim Tod nicht mehr um und verschwinden ohne Rauchwolke – die Meowl-Animation läuft weiter	Players no longer fall over on death and vanish without the smoke puff – the Meowl animation still plays
+Vanilla	Vanilla
+Bist du AFK, startet eine Szene: Wüstenschlacht, Sternenschlacht, Thronsaal (Lichtschwert-Duell vor einer Raumschlacht) oder Wohnzimmer (Quintuplets) – rein clientseitig.	When you're AFK a scene starts: Desert Battle, Space Battle, Throne Room (lightsaber duel in front of a space battle) or Living Room (Quintuplets) – client-side only.
+Thronsaal	Throne Room
+Wohnzimmer (Quintuplets)	Living Room (Quintuplets)
+Duolingo-Eule	Duolingo Owl
+Skin-Pet Spieler	Skin Pet Player
+Minecraft-Name des Spielers, dessen Original-Skin das Skin Pet trägt	Minecraft name of the player whose original skin the Skin Pet wears
+Flügel am Rücken: Engel, Gotisch, Walküre, Mech, Warden oder Schmetterling – bewegen sich beim Laufen, Fallen und Fliegen.	Wings on your back: Angel, Gothic, Valkyrie, Mech, Warden or Butterfly – they move when walking, falling and flying.
+Welche Flügel du trägst	Which wings you wear
+Größe der Flügel	Size of the wings
+Flügelschlag	Wing Flap
+Wie lebhaft die Flügel schlagen	How lively the wings flap
+Mit Elytra ausblenden	Hide with Elytra
+Keine Flügel, wenn eine Elytra getragen wird	No wings while wearing an Elytra
+Flügel teilen	Share Wings
+Andere Meowl-Spieler sehen deine Flügel	Other Meowl players see your wings
+Flügel anderer zeigen	Show Others' Wings
+Flügel anderer Meowl-Spieler anzeigen	Show the wings of other Meowl players
+Flügel	Wings
+Engel	Angel
+Gotisch	Gothic
+Walküre	Valkyrie
+Schmetterling	Butterfly
+Tal des Endes	Valley of the End
+Wüstenschlacht: Felsen. Sternenschlacht: Brücke eines Raumschiffs. Tal des Endes: Plateau über dem Wasserfall, Naruto gegen Sasuke	Desert Battle: rock. Space Battle: bridge of a starship. Valley of the End: plateau above the waterfall, Naruto vs Sasuke
+Bist du AFK, startet eine Szene: Wüstenschlacht, Sternenschlacht oder Tal des Endes (Naruto gegen Sasuke) – rein clientseitig.	When you're AFK a scene starts: Desert Battle, Space Battle or Valley of the End (Naruto vs Sasuke) – client-side only.
+Flügel am Rücken: Phönix, Seelenfeuer, Galaxie, Kristall, Blitz, Leere, Dämon, Mech, Prisma, Hologramm und mehr – mit Leuchteffekten und Partikeln.	Wings on your back: Phoenix, Soul Fire, Galaxy, Crystal, Lightning, Void, Demon, Mech, Prism, Hologram and more – with glow effects and particles.
+Phönix	Phoenix
+Seelenfeuer	Soul Fire
+Galaxie	Galaxy
+Kristall	Crystal
+Blitz	Lightning
+Leere	Void
+Dämon	Demon
+Prisma	Prism
+Hologramm	Hologram
+Farbton	Hue
+Verschiebt alle Farben des Stils (0 = Original)	Shifts all colors of the style (0 = original)
+Effekte	Effects
+Stärke von Leuchten, Flammen, Blitzen und Glanz	Strength of glow, flames, lightning and shine
+Partikel	Particles
+Flügel geben passende Partikel ab (Funken, Flammen, Sterne …)	Wings emit matching particles (sparks, flames, stars …)
+Partikelmenge	Particle Amount
+Wie viele Partikel	How many particles
+Wenig	Few
+Viel	Many
+Partikel in Ego-Sicht	Particles in First Person
+Eigene Flügel-Partikel auch in der Ego-Perspektive	Show your own wing particles in first person too

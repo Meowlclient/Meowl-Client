@@ -1,0 +1,125 @@
+Stay Hydrated	Stay Hydrated
+Erinnert dich regelmäßig daran, Wasser zu trinken – mit animierter Wasser-Karte.	Regularly reminds you to drink water – with an animated water card.
+Erinnerung	Reminder
+Abstand	Interval
+Wie oft erinnert wird	How often you get reminded
+Anzeigedauer	Display Time
+Wie lange die Erinnerung sichtbar bleibt	How long the reminder stays visible
+Was auf der Karte steht	What the card says
+Trink was!	Drink something!
+Wasserpause	Water Break
+Leises Plätschern bei der Erinnerung	Soft splash sound with the reminder
+Countdown	Countdown
+Kleine Anzeige, wie lange es bis zur nächsten Erinnerung dauert	Small display of the time until the next reminder
+Farbe des Wassers	Water color
+In Menüs warten	Wait in Menus
+Nicht erinnern, solange ein Menü offen ist	Don't remind while a menu is open
+Jetzt testen	Test Now
+Zeigt die Erinnerung sofort	Shows the reminder right away
+Zeigen	Show
+Zeit für ein Glas Wasser!	Time for a glass of water!
+Karte	Card
+Lichtschwert	Lightsaber
+Kosmetik: dein Schwert wird zum leuchtenden Lichtschwert – Farbe, Glow, Zünd- und Schlag-Animation. Andere Meowl-Spieler sehen es auch. Nur visuell.	Cosmetic: your sword becomes a glowing lightsaber – color, glow, ignite and swing animation. Other Meowl players see it too. Visual only.
+Klinge	Blade
+Alle Schwerter anderer	All Swords of Others
+Auch normale Schwerter anderer Spieler als Lichtschwert in deiner Farbe zeigen (nur bei dir)	Show normal swords of other players as a lightsaber in your color too (only for you)
+Lichtschwerter anderer	Others' Lightsabers
+Lichtschwerter anderer Meowl-Spieler in deren Farbe anzeigen	Show other Meowl players' lightsabers in their color
+Andere Meowl-Spieler sehen dein Schwert als Lichtschwert	Other Meowl players see your sword as a lightsaber
+Spieler auswählen	Choose Player
+Beim Teilen erst auswählen, wer deinen Standort sieht (Notruf geht immer an alle)	When sharing, first choose who sees your location (panic always goes to everyone)
+Standort teilen mit …	Share location with …
+Nur Freunde auf diesem Server sehen dich	Only friends on this server see you
+Alle Freunde hier	All Friends Here
+Abbrechen	Cancel
+nicht gegenseitig	not mutual
+anderer Server	other server
+hier	here
+Stil	Style
+Kasten	Box
+Kompakt	Compact
+Lauftext	Scrolling Text
+Lange Titel laufen durch statt abgeschnitten zu werden	Long titles scroll instead of being cut off
+Lauf-Tempo	Scroll Speed
+Wie schnell der Text läuft	How fast the text scrolls
+Textbreite	Text Width
+Breite des Textbereichs (längere Titel laufen durch)	Width of the text area (longer titles scroll)
+Pausiert	Paused
+Kasten mit großem Cover, Karte oder eine Zeile	Box with big cover, card or one line
+Breite	Width
+Höhe	Height
+Ränder ziehen: Breite/Höhe	Drag edges: width/height
+Höhe	Height
+Flügel höher (+) oder tiefer (-) am Rücken	Wings higher (+) or lower (-) on the back
+Position	Position
+Position seitlich	Position Sideways
+Position hoch/runter	Position Up/Down
+Position vor/zurück	Position Forward/Back
+Kleine Verschiebung zur Seite	Small shift to the side
+Kleine Verschiebung nach oben (+) oder unten (-)	Small shift up (+) or down (-)
+Kleine Verschiebung nach vorne (+) oder hinten (-)	Small shift forward (+) or back (-)
+Über 2. Skin-Ebene	Over 2nd Skin Layer
+Sitzt über der äußeren Skin-Schicht (Jacke, Ärmel, Hut-Ebene) statt direkt am Körper	Sits over the outer skin layer (jacket, sleeves, hat layer) instead of directly on the body
+In Ego-Sicht	In First Person
+Effekt auch in der Ich-Perspektive an der Haupthand zeigen	Also show the effect on your main hand in first person
+Drehen anhalten	Stop Rotating
+Drehen fortsetzen	Resume Rotating
+Angehalten	Paused
+Größe im Inventar	Size in Inventory
+Offenes Inventar	Open Inventory
+Normal	Normal
+Shield	Shield
+Schilde durchsichtig machen, damit man beim Blocken durchsehen kann, und einfärben.	Make shields see-through so you can look through them while blocking, and tint them.
+Schild	Shield
+Durchsichtig	See-Through
+Man kann durch das Schild hindurchsehen	You can look through the shield
+Deckkraft	Opacity
+Wie sichtbar das Schild noch ist	How visible the shield still is
+Einfärben	Tint
+Schild in einer Farbe einfärben	Tint the shield in a color
+Farbe des Schilds	Shield color
+Gilt für	Applies To
+Wo das Schild verändert wird	Where the shield is changed
+Ego-Sicht	First Person
+In der Hand (auch andere)	In Hand (others too)
+Überall (auch Inventar)	Everywhere (inventory too)
+Hitcolor	Hitcolor
+Eigene Farbe für das Aufblitzen beim Treffen (statt Rot) – mit Stärke und Regenbogen.	Custom color for the hit flash (instead of red) – with strength and rainbow.
+Stärke	Strength
+Regenbogen	Rainbow
+Farbe wechselt fließend durch alle Farben	Color cycles smoothly through all colors
+Tempo	Speed
+Wie schnell der Regenbogen wechselt	How fast the rainbow changes
+Farbe beim Treffer	Color on hit
+Totem Size	Totem Size
+Größe der Totem-Animation beim Auslösen und des Totems in der Hand einstellen – oder die Animation ausblenden.	Set the size of the totem pop animation and of the totem in your hand – or hide the animation.
+Totem-Animation	Totem Animation
+Die große Totem-Animation beim Auslösen zeigen	Show the big totem animation when it pops
+Größe der Animation	Animation Size
+Größe in der Hand	Size in Hand
+Größe des Totems in deiner Hand (Ego-Sicht)	Size of the totem in your hand (first person)
+Hitboxes	Hitboxes
+Hitboxen mit eigenen Farben je Art, Linienstärke, Füllung, Ziel-Hervorhebung und Treffer-Färbung.	Hitboxes with custom colors per type, line width, fill, target highlight and hit coloring.
+Was	What
+Spieler	Players
+Monster	Monsters
+Tiere & andere	Animals & Others
+Items & Pfeile	Items & Arrows
+Eigene (3. Person)	Own (3rd Person)
+Reichweite	Range
+Farben	Colors
+Farbe Spieler	Player Color
+Farbe Freunde	Friend Color
+Farbe Monster	Monster Color
+Farbe Tiere	Animal Color
+Farbe Items	Item Color
+Farbe Ziel	Target Color
+Farbe Treffer	Hit Color
+Linienstärke	Line Width
+Füllung	Fill
+Augenhöhe	Eye Height
+Blickrichtung	Look Direction
+Ziel hervorheben	Highlight Target
+Treffer zeigen	Show Hits
+Keine Treffer	No results

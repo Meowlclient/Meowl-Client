@@ -1,0 +1,14 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "nebula:font/emoji.png",
+      "ascent": 8,
+      "height": 9,
+      "chars": [
+        "\uE900\uE901\uE902\uE903\uE904\uE905\uE906\uE907\uE908\uE909\uE90A\uE90B\uE90C\uE90D\uE90E\uE90F",
+        "\uE910\uE911\uE912\uE913\uE914\uE915\uE916\uE917\uE918\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+      ]
+    }
+  ]
+}

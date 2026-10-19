@@ -1,0 +1,278 @@
+package com.lennart.nebula.cosmetic.mods;
+
+import com.lennart.nebula.cosmetic.Cosmetic;
+import com.lennart.nebula.cosmetic.CosmeticContext;
+import com.lennart.nebula.cosmetic.CosmeticValue;
+import com.lennart.nebula.cosmetic.Cosmetics;
+import com.lennart.nebula.cosmetic.Shapes;
+import com.lennart.nebula.setting.BooleanSetting;
+import com.lennart.nebula.util.WorldRender;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import java.util.Random;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+
+/** Effekte an den Händen (Armraum: Hand bei y = 8..10). */
+public class Hands extends Cosmetic {
+   public static final String[] STYLES = {"Feuerfäuste", "Eishände", "Blitzhände", "Rasengan", "Chidori", "Boxhandschuhe", "Krallen", "Zauberlicht", "Leuchtringe"};
+
+   private static Hands instance;
+   private final BooleanSetting firstPerson = this.add(
+      new BooleanSetting("In Ego-Sicht", "Effekt auch in der Ich-Perspektive an der Haupthand zeigen", true)
+   );
+
+   public Hands() {
+      super("Hände", "Effekte an den Händen: Feuerfäuste, Eishände, Blitze, Rasengan, Chidori, Boxhandschuhe, Krallen, Zauberlicht oder Leuchtringe.", "hands", Items.BLAZE_ROD, STYLES);
+      instance = this;
+      this.groups(this.firstPerson);
+   }
+
+   /**
+    * Ego-Sicht: Effekt an der Haupthand. {@code arm} = Armteil, wenn die leere Hand gezeichnet wird (Matrix steht im
+    * Modellraum des Arms); null = Hand hält etwas (Matrix steht am Gegenstand).
+    */
+   public static void renderFirstPerson(PoseStack matrices, SubmitNodeCollector queue, ModelPart arm, boolean right) {
+      Hands h = instance;
+      Minecraft mc = Minecraft.getInstance();
+      if (h == null || mc.player == null || !h.firstPerson.get()) {
+         return;
+      }
+
+      CosmeticValue v = Cosmetics.valueFor(mc.player, h);
+      if (v == null) {
+         return;
+      }
+
+      float t = Cosmetics.time();
+      int side = right ? 0 : 1;
+      String st = v.style();
+      float hx = right ? -1.0F : 1.0F;
+      matrices.pushPose();
+      if (arm != null) {
+         arm.translateAndRotate(matrices);
+      }
+
+      float s = v.size() * (arm != null ? 1.0F : 0.85F);
+      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> {
+         PoseStack m = local(entry);
+         if (arm != null) {
+            m.translate(hx, 9.0F, 0.0F);
+         }
+
+         m.scale(s, s, s);
+         h.solid(m, vc, st, v, t, 1.0F, side);
+      });
+      queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> {
+         PoseStack m = local(entry);
+         if (arm != null) {
+            m.translate(hx, 9.0F, 0.0F);
+         }
+
+         m.scale(s, s, s);
+         h.glow(m, vc, st, v, t, side);
+      });
+      matrices.popPose();
+   }
+
+   private static PoseStack local(PoseStack.Pose entry) {
+      PoseStack local = new PoseStack();
+      local.last().pose().set(entry.pose());
+      local.last().normal().set(entry.normal());
+      local.scale(0.0625F, 0.0625F, 0.0625F);
+      return local;
+   }
+
+   private static boolean oneHand(String st) {
+      return st.equals("Rasengan") || st.equals("Chidori") || st.equals("Zauberlicht");
+   }
+
+   @Override
+   public void render(CosmeticContext c, CosmeticValue v) {
+      float t = c.time;
+      float b = c.bright;
+      String st = v.style();
+
+      for (int i = 0; i < 2; i++) {
+         if (i == 1 && oneHand(st)) {
+            break;
+         }
+
+         float hx = i == 0 ? -1.0F : 1.0F;
+         int side = i;
+         // über den Ärmeln: etwas dicker
+         float wide = c.outer ? 1.14F : 1.0F;
+         c.onPart(i == 0 ? c.model.rightArm : c.model.leftArm, () -> {
+            c.solid((m, vc) -> {
+               m.translate(hx, 9.0F, 0.0F);
+               m.scale(v.size() * wide, v.size(), v.size() * wide);
+               this.solid(m, vc, st, v, t, b, side);
+            });
+            c.glow((m, vc) -> {
+               m.translate(hx, 9.0F, 0.0F);
+               m.scale(v.size() * wide, v.size(), v.size() * wide);
+               this.glow(m, vc, st, v, t, side);
+            });
+         });
+      }
+   }
+
+   /** Ursprung = Mitte der Faust. */
+   private void solid(PoseStack m, VertexConsumer vc, String st, CosmeticValue v, float t, float b, int side) {
+      switch (st) {
+         case "Eishände":
+            for (int k = 0; k < 5; k++) {
+               m.pushPose();
+               m.rotate(Axis.YP.rotationDegrees(k * 72.0F + side * 30.0F));
+               m.rotate(Axis.ZP.rotationDegrees(-25.0F - k * 6.0F));
+               Shapes.box(m, vc, 1.6F, -0.4F, -0.4F, 4.0F - k % 2, 0.4F, 0.4F, v.tint(0xFFB8ECFF), Math.max(b, 0.8F));
+               m.popPose();
+            }
+            break;
+         case "Boxhandschuhe": {
+            int glove = v.tint(0xFFD02020);
+            Shapes.box(m, vc, -2.6F, -2.0F, -2.6F, 2.6F, 2.6F, 2.6F, glove, b);
+            Shapes.box(m, vc, -2.2F, -3.4F, -2.2F, 2.2F, -2.0F, 2.2F, 0xFFF4F4F4, b);
+            Shapes.box(m, vc, -1.0F, -1.2F, -2.9F, 1.6F, 1.6F, -2.6F, Shapes.mix(glove, 0xFF000000, 0.2F), b);
+            break;
+         }
+         case "Krallen":
+            for (int k = -1; k <= 1; k++) {
+               Shapes.box(m, vc, k * 0.8F - 0.15F, 0.0F, -2.1F, k * 0.8F + 0.15F, 0.4F, -1.8F, 0xFF808890, b);
+               Shapes.box(m, vc, k * 0.8F - 0.12F, 0.6F, -2.0F, k * 0.8F + 0.12F, 6.0F, -1.9F, 0xFFD8DCE4, Math.max(b, 0.8F));
+            }
+            break;
+         case "Leuchtringe":
+            Shapes.ring(m, vc, -3.0F, 2.5F, 0.4F, 0.6F, 14, t * 40.0F, 0xFFE8C040, b, false, 1.0F);
+            break;
+         default:
+      }
+   }
+
+   private void glow(PoseStack m, VertexConsumer vc, String st, CosmeticValue v, float t, int side) {
+      float pulse = 0.75F + 0.25F * Mth.sin(t * 3.0F + side);
+      switch (st) {
+         case "Feuerfäuste":
+            for (int k = 0; k < 8; k++) {
+               m.pushPose();
+               m.rotate(Axis.YP.rotationDegrees(k * 45.0F));
+               float fl = 0.5F + 0.5F * Mth.sin(t * 13.0F + k * 2.2F + side);
+               Shapes.glow(m, vc, 1.2F, -1.0F - fl * 3.0F, -0.6F, 2.4F, 1.6F, 0.6F, v.tint(0xFFFF6010), 0.45F);
+               Shapes.glow(m, vc, 1.0F, -0.2F - fl * 1.6F, -0.35F, 1.8F, 1.2F, 0.35F, v.tint(0xFFFFD040), 0.6F);
+               m.popPose();
+            }
+
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 3.2F, v.tint(0xFFFF6010), 0.18F * pulse);
+            break;
+         case "Eishände":
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 3.2F, v.tint(0xFF9AE0FF), 0.18F * pulse);
+            break;
+         case "Blitzhände": {
+            Random r = new Random((long)(t * 14.0F) + side * 77L);
+
+            for (int k = 0; k < 3; k++) {
+               float a = r.nextFloat() * 6.283F;
+               float px = 0.0F;
+               float py = 0.0F;
+
+               for (int j = 0; j < 4; j++) {
+                  float nx = px + Mth.cos(a) * 1.3F + (r.nextFloat() - 0.5F) * 1.2F;
+                  float ny = py + Mth.sin(a) * 1.3F + (r.nextFloat() - 0.5F) * 1.2F;
+                  Shapes.bar(m, vc, px, py, nx, ny, (r.nextFloat() - 0.5F) * 2.0F, 0.25F, 0.25F, 0xFFF0FAFF, 1.0F, true, 0.95F);
+                  Shapes.bar(m, vc, px, py, nx, ny, 0.0F, 0.9F, 0.9F, v.tint(0xFF60B0FF), 1.0F, true, 0.3F);
+                  px = nx;
+                  py = ny;
+               }
+            }
+            break;
+         }
+         case "Rasengan": {
+            m.translate(0.0F, 2.5F, -1.5F);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 3.4F, v.tint(0xFF4AB8FF), 0.35F);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 2.2F, v.tint(0xFF8AD8FF), 0.6F);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 1.0F, 0xFFFFFFFF, 0.9F);
+
+            for (int k = 0; k < 6; k++) {
+               m.pushPose();
+               m.rotate(Axis.YP.rotationDegrees(t * 720.0F + k * 60.0F));
+               m.rotate(Axis.XP.rotationDegrees(k * 30.0F));
+               Shapes.glow(m, vc, 1.0F, -0.15F, -0.15F, 3.2F, 0.15F, 0.15F, 0xFFE8F8FF, 0.7F);
+               m.popPose();
+            }
+            break;
+         }
+         case "Chidori": {
+            m.translate(0.0F, 1.5F, -1.0F);
+            float fl = 0.7F + 0.3F * Mth.sin(t * 47.0F);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 2.6F, v.tint(0xFF9AC8FF), 0.4F * fl);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 1.2F, 0xFFFFFFFF, 0.9F);
+            Random r = new Random((long)(t * 20.0F));
+
+            for (int k = 0; k < 6; k++) {
+               float a = r.nextFloat() * 6.283F;
+               float bz = (r.nextFloat() - 0.5F) * 3.0F;
+               float px = 0.0F;
+               float py = 0.0F;
+
+               for (int j = 0; j < 3; j++) {
+                  float nx = px + Mth.cos(a) * 1.6F + (r.nextFloat() - 0.5F) * 1.4F;
+                  float ny = py + Mth.sin(a) * 1.6F + (r.nextFloat() - 0.5F) * 1.4F;
+                  Shapes.bar(m, vc, px, py, nx, ny, bz, 0.22F, 0.22F, 0xFFFFFFFF, 1.0F, true, 0.95F);
+                  px = nx;
+                  py = ny;
+               }
+            }
+            break;
+         }
+         case "Zauberlicht": {
+            float bob = Mth.sin(t * 2.0F) * 0.8F;
+            m.translate(0.0F, 4.0F + bob, -1.0F);
+            int col = v.tint(0xFFC080FF);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 2.4F, col, 0.4F * pulse);
+            Shapes.glowBall(m, vc, 0.0F, 0.0F, 0.0F, 1.0F, 0xFFFFFFFF, 0.85F);
+
+            for (int k = 0; k < 4; k++) {
+               float a = t * 3.0F + k * 1.57F;
+               Shapes.glowCube(m, vc, Mth.cos(a) * 3.0F, Mth.sin(a * 1.3F) * 1.0F, Mth.sin(a) * 3.0F, 0.3F, col, 0.8F);
+            }
+            break;
+         }
+         case "Leuchtringe":
+            Shapes.ring(m, vc, -3.0F, 2.5F, 1.0F, 1.0F, 14, t * 40.0F, Shapes.hsv(t * 0.2F + side * 0.5F + v.hue() / 360.0F, 0.7F, 1.0F), 1.0F, true, 0.4F);
+            break;
+         default:
+      }
+   }
+
+   @Override
+   public void particles(ClientLevel world, Player p, CosmeticValue v, Random r) {
+      String st = v.style();
+      if ((st.equals("Feuerfäuste") || st.equals("Blitzhände") || st.equals("Eishände")) && r.nextFloat() < 0.25F) {
+         double yaw = Math.toRadians(p.yBodyRot);
+         double side = r.nextBoolean() ? 0.38 : -0.38;
+         double x = p.getX() + Math.cos(yaw) * side;
+         double z = p.getZ() + Math.sin(yaw) * side;
+         world.addParticle(
+            st.equals("Feuerfäuste") ? ParticleTypes.SMALL_FLAME : (st.equals("Eishände") ? ParticleTypes.SNOWFLAKE : ParticleTypes.ELECTRIC_SPARK),
+            x,
+            p.getY() + 0.8,
+            z,
+            0.0,
+            0.01,
+            0.0
+         );
+      }
+   }
+
+   @Override
+   protected boolean hasLayerOption() {
+      return true;
+   }
+}
