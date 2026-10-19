@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "nebula",
+  "version": "1.52.7",
+  "name": "Meowl Client",
+  "description": "Meowl Client: neues MenÃ¼ mit Live-Vorschauen, Crosshair-Editor + PvP-Addons, Toggle Sprint/Sneak, Totem-Pop-ZÃ¤hler, Tiers (MCPVP/MCTiers-VTL, PvPTiers, Subtiers) links/rechts am Namen, eigener Nametag, Item Beam, Totem Inspect, Facecam, Block Images, Sheriff Duel, Meowl Pet, Emote-Rad, AFK-Szenen (WÃ¼sten- und Sternenschlacht) und mehr. Optional mit dem Addon Meowl Combat.",
+  "authors": [
+    "Lennart"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "mixins": [
+    "nebula.mixins.json"
+  ],
+  "entrypoints": {
+    "client": [
+      "com.lennart.nebula.NebulaClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "jars": [
+    {
+      "file": "META-INF/jars/bridj-0.7.0.jar"
+    },
+    {
+      "file": "META-INF/jars/webcam-capture-0.3.12.jar"
+    }
+  ]
+}

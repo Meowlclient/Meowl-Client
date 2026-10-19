@@ -1,0 +1,6 @@
+name: MeowlRules
+version: 1.0.0
+main: de.meowl.rules.MeowlRules
+api-version: '1.21'
+description: Endkristalle, Seelenanker und Betten zerstoeren keine Bloecke
+authors: [Meowl]

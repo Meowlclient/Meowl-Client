@@ -1,0 +1,22 @@
+# Gradle / IDE
+.gradle/
+build/
+out/
+run/
+.idea/
+*.iml
+.vscode/
+
+# Build-Ausgaben und Logs
+dist/
+logs/
+server/dist/
+server/**/build/
+server/*-alt.sh
+*.log
+
+# Videos / große Dateien
+promo/
+
+# lokale Konfiguration
+local.properties

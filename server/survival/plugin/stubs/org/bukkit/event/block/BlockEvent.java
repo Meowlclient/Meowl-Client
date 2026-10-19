@@ -1,0 +1,1 @@
+package org.bukkit.event.block; public abstract class BlockEvent extends org.bukkit.event.Event {}

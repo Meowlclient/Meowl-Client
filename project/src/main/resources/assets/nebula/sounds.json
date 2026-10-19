@@ -1,0 +1,7 @@
+{
+  "plasma.ignite": { "sounds": [ { "name": "nebula:plasma/ignite" } ] },
+  "plasma.retract": { "sounds": [ { "name": "nebula:plasma/retract" } ] },
+  "plasma.swing": { "sounds": [ { "name": "nebula:plasma/swing" } ] },
+  "plasma.hit": { "sounds": [ { "name": "nebula:plasma/hit" } ] },
+  "plasma.hum": { "sounds": [ { "name": "nebula:plasma/hum" } ] }
+}

@@ -1,0 +1,91 @@
+# Umbenennungen 1.21.11 (Mojang-Namen) -> 26.3
+# Format:  alt => neu        (wörtlich)
+#          re: muster => ersatz   (regulärer Ausdruck, .NET-Syntax)
+
+# ---- GUI-Zeichnen: GuiGraphics -> GuiGraphicsExtractor
+re: \bGuiGraphics\b => GuiGraphicsExtractor
+re: \.drawCenteredString\( => .centeredText(
+re: \.drawStringWithBackdrop\( => .textWithBackdrop(
+re: \.drawWordWrap\( => .textWithWordWrap(
+re: \.drawString\( => .text(
+re: \.hLine\( => .horizontalLine(
+re: \.vLine\( => .verticalLine(
+re: \.renderFakeItem\( => .fakeItem(
+re: \.renderItemDecorations\( => .itemDecorations(
+re: \.renderItem\( => .item(
+re: \.renderOutline\( => .outline(
+re: \.submitEntityRenderState\( => .entity(
+re: \.submitSkinRenderState\( => .skin(
+re: \.renderDeferredElements\( => .extractDeferredElements(
+
+# ---- Bildschirme: liegen jetzt in Minecraft.gui
+re: (?<![\w.])(mc|minecraft|client|this\.mc|this\.minecraft|this\.client|Minecraft\.getInstance\(\))\.screen\b(?!\s*\()(?!\.v1) => $1.gui.screen()
+re: \b(mc|minecraft|client|this\.mc|this\.minecraft|this\.client|Minecraft\.getInstance\(\))\.setScreen\( => $1.gui.setScreen(
+re: \.options\.hideGui\b => .gui.hud.isHidden()
+
+# ---- Fabric API
+re: \bClientCommandManager\b => ClientCommands
+net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper => net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
+re: \bKeyBindingHelper\.registerKeyBinding\( => KeyMappingHelper.registerKeyMapping(
+re: \bKeyBindingHelper\b => KeyMappingHelper
+LivingEntityFeatureRendererRegistrationCallback => LivingEntityRenderLayerRegistrationCallback
+
+# ---- Rendering: blaze3d-Pipelines heißen jetzt renderpearl
+com.mojang.blaze3d.pipeline.RenderPipeline => com.mojang.renderpearl.api.pipeline.RenderPipeline
+
+# ---- Bildschirme: Basisklasse leitet render/renderBackground auf die neuen Namen um
+re: \bextends Screen\b => extends com.lennart.nebula.compat.MeowlBaseScreen
+
+# ---- verschobene/umbenannte Klassen
+net.minecraft.client.renderer.state.CameraRenderState => net.minecraft.client.renderer.state.level.CameraRenderState
+net.minecraft.client.renderer.LightTexture => net.minecraft.util.LightCoordsUtil
+re: \bLightTexture\b => LightCoordsUtil
+net.minecraft.client.gui.components.PlayerFaceRenderer => net.minecraft.client.gui.components.PlayerFaceExtractor
+re: \bPlayerFaceRenderer\.draw\( => PlayerFaceExtractor.extractRenderState(
+re: \bPlayerFaceRenderer\b => PlayerFaceExtractor
+net.minecraft.client.GuiMessageTag => net.minecraft.client.multiplayer.chat.GuiMessageTag
+net.minecraft.client.resources.model.Material => net.minecraft.client.resources.model.sprite.Material
+
+# ---- Eingabe: SDL statt GLFW
+re: \bKEYSYM\b => KEYBOARD
+
+# ---- PoseStack: Drehungen
+re: \.mulPose\( => .rotate(
+
+# ---- weitere verschobene Klassen/Methoden
+com.mojang.authlib.yggdrasil.ProfileResult => com.mojang.authlib.services.ProfileResult
+com.mojang.blaze3d.pipeline.BlendFunction => com.mojang.renderpearl.api.pipeline.BlendFunction
+net.minecraft.world.inventory.ClickType => net.minecraft.world.inventory.ContainerInput
+re: \bClickType\. => ContainerInput.
+net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback => net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback
+re: \bTooltipComponentCallback\b => ClientTooltipComponentCallback
+re: \bScreens\.getButtons\( => Screens.getWidgets(
+re: \bScreenEvents\.afterRender\( => ScreenEvents.afterExtract(
+re: \.renderEntityInInventoryFollowsMouse\( => .extractEntityInInventoryFollowsMouse(
+re: \.nonEmptyStream\(\) => .nonEmptyItemCopyStream()
+re: \bc\.stream\(\)\.forEach\(items::add\) => c.itemCopies().forEach(items::add)
+re: \bItems\.RED_BANNER\b => Items.BANNER.pick(net.minecraft.world.item.DyeColor.RED)
+re: \bItems\.MAGENTA_DYE\b => Items.DYE.pick(net.minecraft.world.item.DyeColor.MAGENTA)
+re: \bclient\.getMainRenderTarget\(\) => client.gameRenderer.mainRenderTarget()
+re: \binput\.scancode\(\) => input.keycode()
+re: \bvanilla\.render\(context, tickCounter\) => vanilla.extractRenderState(context, tickCounter)
+# Widgets / Tooltips
+re: protected void renderWidget\(GuiGraphicsExtractor => protected void extractWidgetRenderState(GuiGraphicsExtractor
+re: public void renderImage\(Font => public void extractImage(Font
+re: public void renderText\(GuiGraphicsExtractor => public void extractText(GuiGraphicsExtractor
+# Runde 5
+re: , state\.distanceToCameraSq, camera => , camera
+re: \bRenderTypes\.textBackground\(\) => com.lennart.nebula.util.WorldRender.translucentColor()
+re: \bentityCutoutNoCull\( => entityCutout(
+re: \bhandleInventoryMouseClick\( => handleContainerInput(
+re: \bClickType\. => net.minecraft.world.inventory.ContainerInput.
+# Runde 6: Mixin-Ziele
+re: Lnet/minecraft/client/GuiMessage; => Lnet/minecraft/client/multiplayer/chat/GuiMessage;
+re: Lnet/minecraft/client/renderer/state/CameraRenderState; => Lnet/minecraft/client/renderer/state/level/CameraRenderState;
+re: "submitNameTag\( => "submitNameDisplay(
+re: method = \{"renderSlot"\} => method = {"extractSlot"}
+re: "drawString\(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ\)V" => "text(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)V"
+re: "onMove\(JDD\)V" => "onMove(JDDDD)V"
+re: meowl\$afkMove\(long window, double x, double y, CallbackInfo ci\) => meowl$$afkMove(long window, double x, double y, double dx, double dy, CallbackInfo ci)
+# Runde 7
+re: "addBreakingBlockEffect" => "addBreakingBlockEffects"

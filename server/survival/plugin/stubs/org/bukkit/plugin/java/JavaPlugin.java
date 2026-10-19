@@ -1,0 +1,1 @@
+package org.bukkit.plugin.java; public abstract class JavaPlugin implements org.bukkit.plugin.Plugin { public void onEnable() {} public final org.bukkit.Server getServer() { return null; } }
