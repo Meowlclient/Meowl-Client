@@ -1,5 +1,6 @@
 package com.lennart.nebula.cosmetic.mods;
 
+import com.lennart.nebula.cosmetic.Art;
 import com.lennart.nebula.cosmetic.Cosmetic;
 import com.lennart.nebula.cosmetic.CosmeticContext;
 import com.lennart.nebula.cosmetic.CosmeticValue;
@@ -20,7 +21,7 @@ import net.minecraft.world.item.Items;
  * Bewegungen (Schwanz, Flügel, Kiemen …). Ursprung = Schulter oben, oben = -y, vorne = -z.
  */
 public class ShoulderBuddy extends Cosmetic {
-   public static final String[] STYLES = {"Katze", "Eule", "Mini-Drache", "Schleim", "Geist", "Pinguin", "Fuchs", "Axolotl", "Biene"};
+   public static final String[] STYLES = {"Katze", "Eule", "Mini-Drache", "Schleim", "Geist", "Pinguin", "Fuchs", "Axolotl", "Biene", "Sakura-Hirsch"};
    private static final int BLACK = 0xFF141414;
    private static final int WHITE = 0xFFF4F2EE;
    private final ModeSetting side = this.add(new ModeSetting("Schulter", "Auf welcher Schulter", "Links", "Links", "Rechts"));
@@ -28,7 +29,7 @@ public class ShoulderBuddy extends Cosmetic {
    public ShoulderBuddy() {
       super(
          "Schulterbegleiter",
-         "Ein kleiner Begleiter auf deiner Schulter: Katze, Eule, Mini-Drache, Schleim, Geist, Pinguin, Fuchs, Axolotl oder Biene.",
+         "Ein kleiner Begleiter auf deiner Schulter: Katze, Eule, Mini-Drache, Schleim, Geist, Pinguin, Fuchs, Axolotl, Biene oder Sakura-Hirsch.",
          "shoulder",
          Items.PARROT_SPAWN_EGG,
          STYLES
@@ -90,6 +91,7 @@ public class ShoulderBuddy extends Cosmetic {
          case "Fuchs" -> this.fox(m, vc, v, t, b, glow, look);
          case "Axolotl" -> this.axolotl(m, vc, v, t, b, glow, look);
          case "Biene" -> this.bee(m, vc, v, t, b, glow, look);
+         case "Sakura-Hirsch" -> this.stag(m, vc, v, t, b, glow, look);
          default -> this.cat(m, vc, v, t, b, glow, look);
       }
 
@@ -565,5 +567,88 @@ public class ShoulderBuddy extends Cosmetic {
    @Override
    protected boolean hasLayerOption() {
       return true;
+   }
+
+   /** Kleiner Waldgeist-Hirsch aus elfenbeinfarbenen Blöcken, rosa Rauten und einem blühenden Geweih. */
+   private void stag(PoseStack m, VertexConsumer vc, CosmeticValue v, float t, float b, boolean glow, float look) {
+      int pink = v.tint(Art.SAKURA);
+      float nod = Mth.sin(t * 1.1F) * 5.0F;
+      if (glow) {
+         float tw = 0.5F + 0.5F * Mth.sin(t * 2.0F);
+         Art.glowSpark(m, vc, -1.6F, -8.6F, -2.3F, 0.6F, pink, 0.1F + 0.12F * tw);
+         Art.glowSpark(m, vc, 1.6F, -8.6F, -2.3F, 0.6F, pink, 0.1F + 0.12F * (1.0F - tw));
+         Art.glowSpark(m, vc, -1.05F, -2.7F, -0.75F, 0.25F, pink, 0.4F * tw);
+         Art.glowSpark(m, vc, 1.05F, -2.7F, -0.75F, 0.25F, pink, 0.4F * tw);
+         return;
+      }
+
+      m.pushPose();
+      m.scale(0.62F, 0.62F, 0.62F);
+      int bone = v.tint(Art.IVORY);
+      int white = Art.WHITE;
+      int hoof = Art.STONE;
+      // Beine mit Hufen und Gelenkplatten
+      for (int sx = -1; sx <= 1; sx += 2) {
+         for (int sz = -1; sz <= 1; sz += 2) {
+            float x = sx * 1.05F, z = sz * 2.0F;
+            Art.bevel(m, vc, x - 0.38F, -3.4F, z - 0.38F, x + 0.38F, -0.45F, z + 0.38F, 0.08F, bone, b);
+            Art.bevel(m, vc, x - 0.5F, -2.3F, z - 0.5F, x + 0.5F, -1.7F, z + 0.5F, 0.1F, white, b);
+            Art.bevel(m, vc, x - 0.45F, -0.5F, z - 0.45F, x + 0.45F, 0.0F, z + 0.45F, 0.08F, hoof, b);
+         }
+      }
+
+      // Rumpf in Lagen, Rauten an den Seiten
+      Art.bevel(m, vc, -1.6F, -5.6F, -2.8F, 1.6F, -3.2F, 2.8F, 0.3F, bone, b);
+      Art.bevel(m, vc, -1.75F, -5.9F, -2.2F, 1.75F, -4.9F, 1.6F, 0.25F, white, b);
+      Art.bevel(m, vc, -1.45F, -3.5F, -2.4F, 1.45F, -3.05F, 2.4F, 0.12F, Art.bright(bone, 0.9F), b);
+      for (int sx = -1; sx <= 1; sx += 2) {
+         Art.diamond(m, vc, sx * 1.66F, -4.3F, -1.2F, 0.32F, 0, pink, b);
+         Art.diamond(m, vc, sx * 1.66F, -4.0F, 0.6F, 0.24F, 0, pink, b);
+         Art.diamond(m, vc, sx * 1.66F, -4.5F, 1.9F, 0.2F, 0, pink, b);
+      }
+
+      // Stummelschwanz
+      Art.bevel(m, vc, -0.45F, -5.8F, 2.7F, 0.45F, -4.9F, 3.4F, 0.12F, white, b);
+      // Hals aus gestapelten Platten
+      for (int i = 0; i < 3; i++) {
+         float y = -5.2F - i * 0.7F, z = -2.3F - i * 0.5F, w = 0.95F - i * 0.06F;
+         Art.bevel(m, vc, -w, y - 0.9F, z - 0.7F, w, y, z + 0.7F, 0.15F, i % 2 == 0 ? bone : white, b);
+      }
+
+      Art.diamond(m, vc, 0.0F, -6.0F, -3.55F, 0.26F, 2, pink, b);
+      // Kopf: nickt und schaut sich um
+      m.pushPose();
+      m.translate(0.0F, -7.6F, -3.9F);
+      m.rotate(Axis.YP.rotationDegrees(look * 0.6F));
+      m.rotate(Axis.XP.rotationDegrees(nod));
+      Art.bevel(m, vc, -0.95F, -1.3F, -0.9F, 0.95F, 0.2F, 0.9F, 0.25F, bone, b);
+      Art.bevel(m, vc, -0.6F, -0.85F, -2.4F, 0.6F, 0.1F, -0.7F, 0.18F, white, b);
+      Art.bevel(m, vc, -0.35F, -0.7F, -2.55F, 0.35F, -0.3F, -2.3F, 0.08F, Art.CHARCOAL, b);
+      Art.diamond(m, vc, 0.0F, -0.85F, -0.95F, 0.24F, 2, pink, b);
+      for (int sx = -1; sx <= 1; sx += 2) {
+         // Augen (dunkel mit Glanzpunkt, blinzeln) und Ohren
+         if (blink(t)) {
+            Art.box(m, vc, sx * 0.96F - 0.04F, -0.65F, -0.55F, sx * 0.96F + 0.04F, -0.55F, -0.05F, Art.INK, b);
+         } else {
+            Art.box(m, vc, sx * 0.96F - 0.04F, -0.85F, -0.55F, sx * 0.96F + 0.04F, -0.4F, -0.1F, Art.INK, b);
+            Art.box(m, vc, sx * 1.0F - 0.03F, -0.82F, -0.5F, sx * 1.0F + 0.03F, -0.68F, -0.38F, 0xFFFFFFFF, 1.0F);
+         }
+
+         float flick = blink(t * 1.3F + sx) ? 18.0F : 0.0F;
+         m.pushPose();
+         m.translate(sx * 0.95F, -1.0F, 0.3F);
+         m.rotate(Axis.ZP.rotationDegrees(sx * (35.0F + flick)));
+         Art.bevel(m, vc, -0.25F, -1.1F, -0.2F, 0.25F, 0.0F, 0.2F, 0.08F, white, b);
+         Art.box(m, vc, -0.14F, -0.95F, -0.24F, 0.14F, -0.15F, -0.18F, pink, b);
+         m.popPose();
+         m.pushPose();
+         m.translate(sx * 0.7F, -1.25F, 0.2F);
+         Art.antler(m, vc, sx, 0.85F, bone, b);
+         m.popPose();
+      }
+
+      m.popPose();
+      Art.drift(m, vc, 0.0F, -14.0F, -1.0F, 4.0F, 14.0F, 6, t, 0.8F, b);
+      m.popPose();
    }
 }

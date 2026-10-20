@@ -109,11 +109,11 @@ public final class KarambitHand {
             return;
          }
 
-         // Butterfly: Hand schnellt hoch, das Handgelenk rollt mit dem wirbelnden Griff, kurzes Nachwippen
-         float d = ButterflyKnife.TRICK_TIME;
-         float lift = env(bt, 0.0F, 0.12F, d - 0.3F, d);
-         float roll = (float)Math.sin(bt / d * Math.PI * 2.0) * 28.0F * lift;
-         float bob = (float)Math.sin(bt * Math.PI * 5.0) * 0.03F * lift;
+         // Butterfly: Hand hebt sich mit dem Trick (Kanal "Anheben" der Keyframes), das Handgelenk rollt mit dem wirbelnden Griff
+         float d = ButterflyKnife.duration();
+         float lift = ButterflyKnife.pose(System.currentTimeMillis()).lift();
+         float roll = (float)Math.sin(bt / d * Math.PI * 2.0) * 22.0F * lift;
+         float bob = (float)Math.sin(bt * Math.PI * 5.0) * 0.025F * lift;
          m.translate(f * HX, HY, HZ);
          m.translate(-f * 0.06F * lift, 0.07F * lift + bob, 0.04F * lift);
          m.rotate(Axis.ZP.rotationDegrees(f * (roll + 12.0F * lift)));
@@ -161,8 +161,13 @@ public final class KarambitHand {
 
    /** Nach dem Zeichnen des Arms (Matrizen wie für die Hand): Karambit in die Faust setzen. */
    public static void drawKnife(PoseStack m, SubmitNodeCollector queue, boolean right) {
+      drawKnife(m, queue, right, 0.0F);
+   }
+
+   /** Wie oben, mit Schlagfortschritt (Butterfly schneidet mit dem Handgelenk mit). */
+   public static void drawKnife(PoseStack m, SubmitNodeCollector queue, boolean right, float swing) {
       if (PlasmaMode.butterfly()) {
-         ButterflyKnife.drawFirstPerson(m, queue, right);
+         ButterflyKnife.drawFirstPerson(m, queue, right, swing);
          return;
       }
 
