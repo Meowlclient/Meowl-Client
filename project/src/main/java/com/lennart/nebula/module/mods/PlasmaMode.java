@@ -48,6 +48,8 @@ public class PlasmaMode extends Module {
    private final NumberSetting volume = this.add(new NumberSetting("Lautstärke", "Lautstärke der Sounds", 50.0, 0.0, 100.0, 5.0, "%"));
    private final BooleanSetting hum = this.add(new BooleanSetting("Summen", "Leises Summen, solange du das Schwert hältst", true));
    private final ModeSetting finish = this.add(new ModeSetting("Finish", "Muster der Karambit-Klinge (wie in CS)", "Doppler", PlasmaSword.FINISHES));
+   private final NumberSetting trickSpeed = this.add(new NumberSetting("Trick-Tempo", "Geschwindigkeit der Butterfly-Tricks (Inspect-Taste)", 100.0, 50.0, 160.0, 5.0, "%"));
+   private final BooleanSetting slash = this.add(new BooleanSetting("Messer-Schnitt", "Butterfly schneidet beim Zuschlagen mit dem Handgelenk mit", true));
    private boolean inspectDown;
    private final boolean[] slotDown = new boolean[9];
    private int lastSlot = -1;
@@ -142,6 +144,18 @@ public class PlasmaMode extends Module {
          : new PlasmaSword.Look(
             p.color.get() & 16777215, (float)(p.glow.get() / 100.0), 0.95F * (float)(p.length.get() / 100.0), 1.0F, 0.0F, false, true, model, PlasmaSword.finishId(p.finish.get())
          );
+   }
+
+   /** Tempo-Faktor der Butterfly-Tricks (1 = normal). */
+   public static float trickSpeed() {
+      PlasmaMode p = instance;
+      return p == null ? 1.0F : (float)(p.trickSpeed.get() / 100.0);
+   }
+
+   /** Butterfly-Schnitt beim Zuschlagen an? */
+   public static boolean knifeSlash() {
+      PlasmaMode p = instance;
+      return p == null || p.slash.get();
    }
 
    /** Ist das eigene Messer gerade ein Butterfly? */
@@ -336,6 +350,10 @@ public class PlasmaMode extends Module {
       this.inspectDown = inspectPressed;
       if (!now || swinging) {
          com.lennart.nebula.fx.KarambitHand.cancelInspect();
+      }
+
+      if (now && swinging) {
+         com.lennart.nebula.fx.ButterflyKnife.cancel();
       }
 
       if (!now) {

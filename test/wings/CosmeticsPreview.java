@@ -36,6 +36,10 @@ public class CosmeticsPreview {
       BufferedImage sheet = new BufferedImage(W * cols, H * rows, BufferedImage.TYPE_INT_RGB);
       Graphics2D g = sheet.createGraphics();
       float yaw = Float.parseFloat(a[2]);
+      if (System.getenv("CULL") != null) {
+         WingsPreview.CULL = Integer.parseInt(System.getenv("CULL"));
+      }
+
       if (a.length > 5) {
          WingsPreview.ZOOM = Float.parseFloat(a[3]);
          WingsPreview.OX = Float.parseFloat(a[4]);

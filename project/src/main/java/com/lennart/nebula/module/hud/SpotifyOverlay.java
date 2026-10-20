@@ -73,6 +73,12 @@ public class SpotifyOverlay extends Module {
    private final ColorSetting worldColorA = this.add(new ColorSetting("Welt-Farbe 1", "Farbe am Wortanfang (Lyrics in der Welt)", 0xFFF4EEFF, false));
    private final ColorSetting worldColorB = this.add(new ColorSetting("Welt-Farbe 2", "Farbe am Wortende (Lyrics in der Welt)", 0xFFB98CFF, false));
    private final NumberSetting lyricOffset = this.add(new NumberSetting("Lyrics-Verschiebung", "Text früher (-) oder später (+), falls er nicht passt", 0.0, -3000.0, 3000.0, 100.0, "ms"));
+   private final NumberSetting lyricWordDelay = this.add(
+      new NumberSetting("Wort-Tempo", "Wie schnell die Wörter einer Zeile nacheinander kommen (ms je Buchstabe)", 70.0, 30.0, 140.0, 5.0, "ms")
+   );
+   private final NumberSetting lyricWordAnim = this.add(new NumberSetting("Wort-Animation", "Dauer des Einblendens je Wort", 280.0, 80.0, 700.0, 20.0, "ms"));
+   private final NumberSetting lyricWordGap = this.add(new NumberSetting("Wort-Abstand", "Abstand zwischen den Wörtern (in der Welt)", 1.2, 0.6, 3.0, 0.1, "x"));
+   private final NumberSetting lyricGlow = this.add(new NumberSetting("Lyrics-Glow", "Lila Leuchten um die Wörter (in der Welt)", 100.0, 0.0, 200.0, 10.0, "%"));
    private final HudBox lyricBox = this.hudBox("Lyrics", 1.0, 22.0);
    /** Einmalig: Lyrics aus der alten Mitte-unten-Position an den linken Rand holen. */
    private final BooleanSetting lyricLayoutV2 = this.add(new BooleanSetting("Lyrics-Layout 2", "", false));
@@ -448,8 +454,14 @@ public class SpotifyOverlay extends Module {
 
    // ================================================================== Lyrics in der Welt
 
-   /** Eine Zeile in der Welt: Ort, Neigung, Wörter mit eigenem Erscheinungszeitpunkt. */
-   private record WorldLine(int index, net.minecraft.world.phys.Vec3 pos, float tilt, String[] words, long[] appear, long born) {
+   /**
+    * Eine Zeile in der Welt mit fertigem Layout (einmal beim Zeilenwechsel berechnet, nicht pro Frame): Ort, Neigung,
+    * Wörter mit Erscheinungszeitpunkt (Song-ms), Position jedes Worts und Breiten der Zeichen für den Farbverlauf.
+    */
+   private record WorldLine(
+      int index, Object source, net.minecraft.world.phys.Vec3 pos, float tilt, String[] words, long[] appear, long born, float[] wx, float[] wy, int[] ww,
+      String[][] chars, int[][] charW
+   ) {
    }
 
    private WorldLine worldLine;
@@ -457,7 +469,33 @@ public class SpotifyOverlay extends Module {
    private long worldFadeAt;
    private final java.util.Random worldRandom = new java.util.Random();
 
-   /** Wie im Video: jede Zeile ploppt Wort für Wort an einer neuen Stelle im Blickfeld auf; immer nur eine Zeile. */
+   /**
+    * Zeitpunkte (Song-ms), zu denen die Wörter einer Zeile gesungen werden. LRCLIB liefert nur Zeilen-Zeitstempel, daher:
+    * erstes Wort am Zeilenanfang, danach nach Wortlänge verteilt (einstellbar, ms je Buchstabe), höchstens 85 % der Zeile.
+    */
+   private long[] wordTimes(List<SpotifyLyrics.Line> lines, int index, String[] words) {
+      long start = lines.get(index).timeMs();
+      long next = index + 1 < lines.size() ? lines.get(index + 1).timeMs() : start + 3000L;
+      long dur = Math.max(400L, next - start);
+      int total = 0;
+      int[] weight = new int[words.length];
+      for (int i = 0; i < words.length; i++) {
+         weight[i] = Math.max(2, words[i].replaceAll("[^\\p{L}\\p{N}]", "").length()) + (words[i].matches(".*[,.!?;:]$") ? 2 : 0);
+         total += weight[i];
+      }
+
+      long span = Math.max(300L, Math.min(dur * 85L / 100L, Math.round(total * this.lyricWordDelay.get())));
+      long[] appear = new long[words.length];
+      int cum = 0;
+      for (int i = 0; i < words.length; i++) {
+         appear[i] = start + span * cum / Math.max(1, total);
+         cum += weight[i];
+      }
+
+      return appear;
+   }
+
+   /** Wie im Video: jede Zeile baut sich Wort für Wort an einer neuen Stelle im Blickfeld auf; die alte blendet aus. */
    @Override
    public void onRenderWorld(com.lennart.nebula.util.WorldCtx context, float tickDelta) {
       if (!this.lyrics.get() || !this.lyricStyle.is("In der Welt") || this.mc.player == null) {
@@ -467,11 +505,13 @@ public class SpotifyOverlay extends Module {
       SpotifyLyrics src = this.lyricSource;
       if (!src.windows() || !src.playing()) {
          this.worldLine = null;
+         this.worldFading = null;
          return;
       }
 
       SpotifyLyrics.Lyrics l = src.lyrics(src.title(), src.artist(), src.durationMs());
       if (l == null || l.lines().isEmpty() || !l.synced()) {
+         this.worldLine = null;
          return;
       }
 
@@ -479,57 +519,87 @@ public class SpotifyOverlay extends Module {
       long pos = src.positionMs() + Math.round(this.lyricOffset.get());
       int current = SpotifyLyrics.indexAt(lines, pos);
       long now = System.currentTimeMillis();
-      if (current >= 0 && (this.worldLine == null || this.worldLine.index() != current)) {
-         String text = lines.get(current).text().trim();
+      // neue Zeile, Sprung im Song oder anderes Lied (gleicher Index, aber andere Lyrics) → neu aufbauen
+      if (this.worldLine == null ? current >= 0 : this.worldLine.index() != current || this.worldLine.source() != l) {
          if (this.worldLine != null) {
-            this.worldFading = this.worldLine;
+            this.worldFading = this.worldLine.source() == l ? this.worldLine : null;
             this.worldFadeAt = now;
          }
 
-         if (text.isEmpty()) {
-            this.worldLine = null;
-         } else {
-            // neue Stelle im Blickfeld: etwas seitlich, eher oben, 7-10 Blöcke entfernt – aber nie in oder hinter Blöcken
-            String[] wordsForWidth = text.split("\\s+");
-            net.minecraft.world.phys.Vec3 at = this.freeSpot(tickDelta, this.mc.font.width("§l" + text) * 0.028 * this.lyricWorldSize.get());
-            String[] words = wordsForWidth;
-            long next = current + 1 < lines.size() ? lines.get(current + 1).timeMs() : lines.get(current).timeMs() + 3000L;
-            long dur = Math.max(400L, next - lines.get(current).timeMs());
-            // Wörter an der Song-Position ausrichten (nicht an der Uhr): Zeilenanfang = erstes Wort, danach nach Wortlänge
-            // verteilt – grob so schnell wie gesungen (~70 ms je Buchstabe), höchstens 85 % der Zeile
-            long start = lines.get(current).timeMs();
-            int total = 0;
-            int[] weight = new int[words.length];
-            for (int i = 0; i < words.length; i++) {
-               weight[i] = Math.max(2, words[i].replaceAll("[^\\p{L}\\p{N}]", "").length()) + (words[i].matches(".*[,.!?;:]$") ? 2 : 0);
-               total += weight[i];
-            }
-
-            long span = Math.max(300L, Math.min(dur * 85L / 100L, total * 70L));
-            long[] appear = new long[words.length];
-            int cum = 0;
-            for (int i = 0; i < words.length; i++) {
-               // etwas früher, damit das Wort beim Singen schon fertig aufgeploppt ist
-               appear[i] = start + span * cum / Math.max(1, total) - 80L;
-               cum += weight[i];
-            }
-
-            this.worldLine = new WorldLine(current, at, (this.worldRandom.nextFloat() - 0.5F) * 14.0F, words, appear, now);
-         }
+         String text = current >= 0 ? lines.get(current).text().trim() : "";
+         this.worldLine = text.isEmpty() ? null : this.layoutWorldLine(l, lines, current, text, tickDelta, now);
       }
 
       if (this.worldFading != null) {
-         float k = 1.0F - (now - this.worldFadeAt) / 300.0F;
-         if (k <= 0.0F) {
+         if (now - this.worldFadeAt > 520L) {
             this.worldFading = null;
          } else {
-            this.drawWorldLine(context, this.worldFading, now, pos, k);
+            this.drawWorldLine(context, this.worldFading, now, pos, (now - this.worldFadeAt) / 1000.0F);
          }
       }
 
       if (this.worldLine != null) {
-         this.drawWorldLine(context, this.worldLine, now, pos, 1.0F);
+         this.drawWorldLine(context, this.worldLine, now, pos, -1.0F);
       }
+   }
+
+   /** Layout einer Zeile: Wörter in höchstens zwei versetzte Reihen (wie im Video), Abstand einstellbar. */
+   private WorldLine layoutWorldLine(SpotifyLyrics.Lyrics l, List<SpotifyLyrics.Line> lines, int index, String text, float tickDelta, long now) {
+      Font tr = this.mc.font;
+      String[] words = text.split("\\s+");
+      int n = words.length;
+      int[] ww = new int[n];
+      String[][] chars = new String[n][];
+      int[][] charW = new int[n][];
+      int total = 0;
+      for (int i = 0; i < n; i++) {
+         ww[i] = tr.width("§l" + words[i]);
+         total += ww[i];
+         int[] cps = words[i].codePoints().toArray();
+         chars[i] = new String[cps.length];
+         charW[i] = new int[cps.length];
+         for (int c = 0; c < cps.length; c++) {
+            chars[i][c] = "§l" + new String(Character.toChars(cps[c]));
+            charW[i][c] = tr.width(chars[i][c]);
+         }
+      }
+
+      float space = tr.width(" ") * (float)this.lyricWordGap.get().doubleValue();
+      // ab ~110 px Textbreite in zwei Reihen teilen, Trennung möglichst in der Mitte
+      int split = n;
+      if (n > 1 && total + space * (n - 1) > 110.0F) {
+         float half = (total + space * (n - 1)) / 2.0F, acc = 0.0F, best = Float.MAX_VALUE;
+         for (int i = 0; i < n - 1; i++) {
+            acc += ww[i] + (i > 0 ? space : 0.0F);
+            if (Math.abs(acc - half) < best) {
+               best = Math.abs(acc - half);
+               split = i + 1;
+            }
+         }
+      }
+
+      float[] wx = new float[n], wy = new float[n];
+      float[] rowW = new float[2];
+      for (int i = 0; i < n; i++) {
+         int r = i < split ? 0 : 1;
+         rowW[r] += ww[i] + (i == 0 || i == split ? 0.0F : space);
+      }
+
+      float maxRow = Math.max(rowW[0], rowW[1]);
+      // zweite Reihe leicht nach rechts versetzt, wie in der Vorlage
+      float[] cursor = {-maxRow / 2.0F - (split < n ? maxRow * 0.08F : 0.0F), -maxRow / 2.0F + maxRow * 0.12F};
+      float rowY0 = split < n ? -6.5F : 0.0F;
+      for (int i = 0; i < n; i++) {
+         int r = i < split ? 0 : 1;
+         wx[i] = cursor[r];
+         wy[i] = rowY0 + r * 13.0F;
+         cursor[r] += ww[i] + space;
+      }
+
+      double width = maxRow * 0.028 * this.lyricWorldSize.get();
+      net.minecraft.world.phys.Vec3 at = this.freeSpot(tickDelta, width);
+      long[] appear = this.wordTimes(lines, index, words);
+      return new WorldLine(index, l, at, (this.worldRandom.nextFloat() - 0.5F) * 12.0F, words, appear, now, wx, wy, ww, chars, charW);
    }
 
    /** Sucht eine freie Stelle im Blickfeld; die Zeile (Breite {@code width}) darf keinen Block berühren. */
@@ -571,53 +641,87 @@ public class SpotifyOverlay extends Module {
       return best;
    }
 
-   private void drawWorldLine(com.lennart.nebula.util.WorldCtx ctx, WorldLine line, long now, long songPos, float alpha) {
+   private static float easeOut(float x) {
+      x = Math.max(0.0F, Math.min(1.0F, x));
+      return 1.0F - (1.0F - x) * (1.0F - x) * (1.0F - x);
+   }
+
+   /**
+    * Zeichnet eine Zeile. Jedes Wort: Einblenden, von leicht unten nach oben gleiten, sanft auf volle Größe; dazu ein
+    * lila Leuchten, das beim Erscheinen weich und breit ist und sich dann zusammenzieht. {@code fadeOut} ≥ 0 = Sekunden,
+    * seit die Zeile abgelöst wurde (Wörter schweben nacheinander nach oben weg).
+    */
+   private void drawWorldLine(com.lennart.nebula.util.WorldCtx ctx, WorldLine line, long now, long songPos, float fadeOut) {
       Font tr = this.mc.font;
       net.minecraft.world.phys.Vec3 cam = ctx.cameraPos();
-      float rise = (now - line.born()) / 1000.0F * 0.08F;
+      float drift = (now - line.born()) / 1000.0F * 0.05F;
       com.mojang.blaze3d.vertex.PoseStack m = ctx.matrices();
       m.pushPose();
-      m.translate(line.pos().x - cam.x, line.pos().y - cam.y + rise, line.pos().z - cam.z);
+      m.translate(line.pos().x - cam.x, line.pos().y - cam.y + drift, line.pos().z - cam.z);
       m.mulPose(ctx.cameraOrientation());
       m.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(line.tilt()));
       float s = 0.028F * (float)this.lyricWorldSize.get().doubleValue();
       m.scale(s, -s, s);
-      int space = tr.width(" ");
-      int total = 0;
+      float anim = (float)(this.lyricWordAnim.get() / 1000.0);
+      float glowK = (float)(this.lyricGlow.get() / 100.0);
+      int colA = this.worldColorA.get() & 0xFFFFFF, colB = this.worldColorB.get() & 0xFFFFFF;
+      int glowRgb = lerpRgb(colB, 0x7A3CFF, 0.35F);
       for (int i = 0; i < line.words().length; i++) {
-         total += tr.width("§l" + line.words()[i]) + (i > 0 ? space : 0);
-      }
-
-      float x = -total / 2.0F;
-      for (int i = 0; i < line.words().length; i++) {
-         String word = line.words()[i];
-         int ww = tr.width("§l" + word);
-         float age = (songPos - line.appear()[i]) / 1000.0F;
-         if (age >= 0.0F) {
-            // Pop: schnell groß, kurz über die volle Größe hinaus, dann zurück
-            float p = Math.min(1.0F, age / 0.22F);
-            float pop = p < 1.0F ? 0.4F + 0.85F * p : 1.0F + 0.25F * Math.max(0.0F, 1.0F - (age - 0.22F) / 0.15F) * (age < 0.37F ? 1.0F : 0.0F);
-            float a = Math.min(1.0F, age / 0.12F) * alpha;
-            m.pushPose();
-            m.translate(x + ww / 2.0F, 0.0F, 0.0F);
-            m.scale(pop, pop, pop);
-            org.joml.Matrix4f mat = m.last().pose();
-            float cx = -ww / 2.0F;
-            for (int c = 0; c < word.length(); c++) {
-               String ch = String.valueOf(word.charAt(c));
-               // Verlauf: Weiß zu Lavendel über das Wort, mit lila Schatten
-               float q = word.length() <= 1 ? 0.5F : (float)c / (word.length() - 1);
-               int rgb = lerpRgb(this.worldColorA.get() & 0xFFFFFF, this.worldColorB.get() & 0xFFFFFF, (q + (i % 2) * 0.35F) % 1.0F);
-               int argb = Math.round(a * 255.0F) << 24 | rgb;
-               // durch Blöcke hindurch sichtbar, damit nichts in Wänden verschwindet, wenn man sich bewegt
-               ctx.text(tr, "§l" + ch, cx, -4.0F, argb, true, mat, true, 0, 15728880);
-               cx += tr.width("§l" + ch);
-            }
-
-            m.popPose();
+         // etwas vor dem Singen starten, damit das Wort beim Singen schon fast fertig da ist
+         float age = (songPos - line.appear()[i]) / 1000.0F + anim * 0.35F;
+         if (age < 0.0F) {
+            continue;
          }
 
-         x += ww + space;
+         float e = easeOut(age / anim);
+         float a = Math.min(1.0F, age / (anim * 0.7F));
+         float rise = (1.0F - e) * 5.0F;
+         float scale = 0.86F + 0.14F * e;
+         if (fadeOut >= 0.0F) {
+            float out = Math.max(0.0F, Math.min(1.0F, (fadeOut - i * 0.03F) / 0.35F));
+            a *= 1.0F - out;
+            rise -= out * 7.0F;
+            scale += out * 0.08F;
+         }
+
+         if (a <= 0.01F) {
+            continue;
+         }
+
+         int ww = line.ww()[i];
+         m.pushPose();
+         m.translate(line.wx()[i] + ww / 2.0F, line.wy()[i] + rise, 0.0F);
+         m.scale(scale, scale, scale);
+         org.joml.Matrix4f mat = m.last().pose();
+         float left = -ww / 2.0F;
+         // Leuchten: vier versetzte Kopien in Lila, beim Erscheinen weit gestreut (weich), dann eng
+         if (glowK > 0.0F) {
+            float spread = 0.7F + (1.0F - e) * 2.6F;
+            int ga = Math.round(Math.min(1.0F, a * glowK * (0.22F + 0.25F * (1.0F - e))) * 255.0F);
+            if (ga > 3) {
+               int g = ga << 24 | glowRgb;
+               String bold = "§l" + line.words()[i];
+               ctx.text(tr, bold, left - spread, -4.0F, g, false, mat, true, 0, 15728880);
+               ctx.text(tr, bold, left + spread, -4.0F, g, false, mat, true, 0, 15728880);
+               ctx.text(tr, bold, left, -4.0F - spread, g, false, mat, true, 0, 15728880);
+               ctx.text(tr, bold, left, -4.0F + spread, g, false, mat, true, 0, 15728880);
+            }
+         }
+
+         // Schrift: Verlauf hell → Lavendel über das Wort, mit Schatten für Lesbarkeit
+         String[] chars = line.chars()[i];
+         int[] cw = line.charW()[i];
+         int alpha = Math.max(4, Math.round(a * 255.0F)) << 24;
+         float cx = left;
+         for (int c = 0; c < chars.length; c++) {
+            float q = chars.length <= 1 ? 0.5F : (float)c / (chars.length - 1);
+            int rgb = lerpRgb(colA, colB, q * 0.85F);
+            // durch Blöcke hindurch sichtbar, damit nichts in Wänden verschwindet, wenn man sich bewegt
+            ctx.text(tr, chars[c], cx, -4.0F, alpha | rgb, true, mat, true, 0, 15728880);
+            cx += cw[c];
+         }
+
+         m.popPose();
       }
 
       m.popPose();
@@ -722,10 +826,15 @@ public class SpotifyOverlay extends Module {
       }
 
       String align = this.lyricAlign.get();
+      // Karaoke: Wörter der aktuellen Zeile leuchten in dem Moment auf, in dem sie gesungen werden
+      long songPos = src.positionMs() + Math.round(this.lyricOffset.get());
+      long[] times = current >= 0 && src.hasTimeline() ? this.hudWordTimes(lines, current) : null;
+      int wordIndex = 0;
 
       for (int i = start; i < lines.size() && y + 9 <= h - 1; i++) {
          boolean cur = i == current;
          int base = this.lyricBox.fade(cur ? this.lyricColor.get() : this.lyricDim.get());
+         int dim = this.lyricBox.fade(this.lyricDim.get());
 
          for (String row : this.lyricRows(tr, lines.get(i), maxW)) {
             if (y + 9 > h - 1) {
@@ -743,7 +852,13 @@ public class SpotifyOverlay extends Module {
                   default -> (w - rw) / 2;
                };
                int a = Math.round((base >>> 24) * f);
-               ctx.drawString(tr, c, x, Math.round(y), a << 24 | base & 0xFFFFFF, true);
+               if (cur && times != null) {
+                  wordIndex = this.drawKaraokeRow(ctx, tr, row, x, Math.round(y), times, wordIndex, songPos, base, dim, f);
+               } else {
+                  ctx.drawString(tr, c, x, Math.round(y), a << 24 | base & 0xFFFFFF, true);
+               }
+            } else if (cur) {
+               wordIndex += this.splitWords(row).length;
             }
 
             y += lineH;
@@ -751,6 +866,60 @@ public class SpotifyOverlay extends Module {
       }
 
       this.lyricBox.end(ctx);
+   }
+
+   private Object hudTimesSource;
+   private int hudTimesIndex = -1;
+   private long[] hudTimes;
+   private final java.util.Map<String, String[]> wordSplit = new java.util.HashMap<>();
+
+   /** Wort-Zeitpunkte der aktuellen Zeile (gecacht, nur beim Zeilen- oder Songwechsel neu berechnet). */
+   private long[] hudWordTimes(List<SpotifyLyrics.Line> lines, int index) {
+      if (this.hudTimes == null || this.hudTimesIndex != index || this.hudTimesSource != lines) {
+         this.hudTimesSource = lines;
+         this.hudTimesIndex = index;
+         this.hudTimes = this.wordTimes(lines, index, this.splitWords(lines.get(index).text().trim()));
+      }
+
+      return this.hudTimes;
+   }
+
+   private String[] splitWords(String text) {
+      String[] w = this.wordSplit.get(text);
+      if (w == null) {
+         if (this.wordSplit.size() > 400) {
+            this.wordSplit.clear();
+         }
+
+         w = text.isEmpty() ? new String[0] : text.split("\\s+");
+         this.wordSplit.put(text, w);
+      }
+
+      return w;
+   }
+
+   /**
+    * Eine Reihe der aktuellen Zeile Wort für Wort: noch nicht gesungene Wörter blass, gesungene blenden in 150 ms auf die
+    * volle Farbe und rutschen dabei einen Pixel hoch. Gibt den Wortzähler nach der Reihe zurück.
+    */
+   private int drawKaraokeRow(GuiGraphics ctx, Font tr, String row, int x, int y, long[] times, int wordIndex, long songPos, int full, int dim, float f) {
+      String[] words = this.splitWords(row);
+      int space = tr.width(Component.literal(" ").withStyle(ChatFormatting.BOLD));
+      float anim = (float)this.lyricWordAnim.get().doubleValue() * 0.55F;
+      for (String word : words) {
+         long at = wordIndex < times.length ? times[wordIndex] : Long.MAX_VALUE;
+         float k = Math.max(0.0F, Math.min(1.0F, (songPos - at + 60.0F) / Math.max(40.0F, anim)));
+         k = 1.0F - (1.0F - k) * (1.0F - k);
+         int a = Math.round((((dim >>> 24) + ((full >>> 24) - (dim >>> 24)) * k)) * f);
+         int rgb = lerpRgb(dim & 0xFFFFFF, full & 0xFFFFFF, k);
+         Component c = Component.literal(word).withStyle(ChatFormatting.BOLD);
+         int lift = k > 0.0F && k < 1.0F ? Math.round((1.0F - k) * 1.5F) : 0;
+         ctx.drawString(tr, c, x, y + lift, Math.max(4, a) << 24 | rgb, true);
+         x += tr.width(c) + space;
+         wordIndex++;
+      }
+
+      return wordIndex;
    }
 
    /** Kasten: festes Format, großes Cover links, Titel und Interpret laufen durch, kleiner Equalizer. */

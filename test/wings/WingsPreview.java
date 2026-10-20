@@ -54,6 +54,8 @@ public class WingsPreview {
    }
 
    static float ZOOM = 1.0F;
+   /** Rückseiten wie im Spiel weglassen (0 = aus, 1/-1 = welche Drehrichtung vorne ist). */
+   static int CULL = 0;
    static float OX = 0.0F;
    static float OY = 0.0F;
    static int W = 360;
@@ -202,6 +204,17 @@ public class WingsPreview {
          }
 
          int col = Float.floatToRawIntBits(rec.v.get(q)[3]);
+         if (CULL != 0 && !add) {
+            float area = (p[1][0] - p[0][0]) * (p[2][1] - p[0][1]) - (p[1][1] - p[0][1]) * (p[2][0] - p[0][0]);
+            if (Math.abs(area) < 1.0E-6F) {
+               area = (p[2][0] - p[0][0]) * (p[3][1] - p[0][1]) - (p[2][1] - p[0][1]) * (p[3][0] - p[0][0]);
+            }
+
+            if (area * CULL < 0.0F) {
+               continue;
+            }
+         }
+
          tri(p[0], p[1], p[2], col, zb, rgb, add);
          tri(p[0], p[2], p[3], col, zb, rgb, add);
       }

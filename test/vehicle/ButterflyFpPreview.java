@@ -30,22 +30,29 @@ public class ButterflyFpPreview {
    static float easeOut(float x) { x = Math.max(0, Math.min(1, x)); return 1 - (1 - x) * (1 - x) * (1 - x); }
 
    public static void main(String[] a) throws Exception {
-      Vector3f CLOSED = new Vector3f(1.0F, -0.22F, 0.35F).normalize();
-      Vector3f OPEN = new Vector3f(0.42F, 1.0F, -0.22F).normalize();
-      float[] times = {-1, 0.15F, 0.35F, 0.55F, 0.8F, 1.05F, 9};
+      // Aufruf: <out.png> <DRAW|AERIAL|FAN|ROLLOVER|SWING> – 12 Bilder über die Dauer des Tricks
+      String name = a.length > 1 ? a[1] : "DRAW";
+      float[][] keys = null;
+      if (!name.equals("SWING")) {
+         java.lang.reflect.Field f = com.lennart.nebula.fx.ButterflyKnife.class.getDeclaredField(name);
+         f.setAccessible(true);
+         keys = (float[][])f.get(null);
+      }
+      int N = 12;
       WingsPreview.W = 534;
       int W = WingsPreview.W, H = WingsPreview.H;
-      BufferedImage sheet = new BufferedImage(W * 4, H * 2, BufferedImage.TYPE_INT_RGB);
+      BufferedImage sheet = new BufferedImage(W * 4, H * 3, BufferedImage.TYPE_INT_RGB);
       Graphics2D g = sheet.createGraphics();
       Method bm = PlasmaSword.class.getDeclaredMethod("butterfly", Matrix4f.class, VertexConsumer.class, PlasmaSword.Look.class, float.class, float.class, float.class, boolean.class);
       bm.setAccessible(true);
       PlasmaSword.Look look = new PlasmaSword.Look(0xB040FF, 1.0F, 0.95F, 1.0F, 0.0F, false, true, PlasmaSword.BUTTERFLY, PlasmaSword.LAVENDER);
-      for (int i = 0; i < times.length; i++) {
-         float t = times[i];
-         Vector3f dir; float spin, ha, hb;
-         if (t < 0) { dir = OPEN; spin = 0; ha = 180; hb = 152; }
-         else if (t > 5) { dir = OPEN; spin = 4; ha = 180; hb = 160; }
-         else { dir = new Vector3f(OPEN).add(new Vector3f(-0.35F, -0.25F, 0.0F).mul((float)Math.sin(Math.PI * Math.min(1.0F, t / 0.9F)))).normalize(); ha = 180; hb = 152 + 720 * easeOut(t / 1.25F); spin = 360 * smooth(t / 0.85F) + (float)Math.sin(t * 18) * 12 * (1 - smooth(t / 1.25F)); }
+      for (int i = 0; i < N; i++) {
+         float dur = keys == null ? 1.0F : keys[keys.length - 1][0];
+         float t = dur * i / (N - 1);
+         com.lennart.nebula.fx.ButterflyKnife.Pose idle = com.lennart.nebula.fx.ButterflyKnife.idle(0.0F);
+         com.lennart.nebula.fx.ButterflyKnife.Pose p = keys == null ? idle : com.lennart.nebula.fx.ButterflyKnife.sample(keys, t, idle);
+         float swing = keys == null ? t : 0.0F;
+         float ha = 180 - p.blade(), hb = p.handleB() - p.blade();
          WingsPreview.Rec body = new WingsPreview.Rec(), solid = new WingsPreview.Rec(), glow = new WingsPreview.Rec();
          PoseStack m = new PoseStack();
          m.translate(0.64F, -0.6F, -0.72F);
@@ -61,14 +68,11 @@ public class ButterflyFpPreview {
          WorldRender.box(m, body, -3, -2, -2, 1, 10, 2, 0xFF5A5A62, 0.9F);
          m.popPose();
          m.translate(-1 / 16F, 9 / 16F, -0.6F / 16F);
-         m.mulPose(armSpace(dir));
-         m.mulPose(Axis.XP.rotationDegrees(spin));
-         m.scale(1.35F, 1.35F, 1.35F);
-         m.translate(0, -(0.12F + 0.24F * (float)Math.cos(Math.toRadians(ha))), 0);
+         com.lennart.nebula.fx.ButterflyKnife.place(m, p, 1.0F, swing);
          Matrix4f mat = new Matrix4f(m.last().pose());
          bm.invoke(null, mat, solid, look, 1.0F, ha, hb, false);
          bm.invoke(null, mat, glow, look, 1.0F, ha, hb, true);
-         for (WingsPreview.Rec r : new WingsPreview.Rec[]{body, solid, glow}) for (float[] p : r.v) { p[1] = -p[1] + 0.2F; p[2] = -p[2] - 6.0F; }
+         for (WingsPreview.Rec r : new WingsPreview.Rec[]{body, solid, glow}) for (float[] q : r.v) { q[1] = -q[1] + 0.2F; q[2] = -q[2] - 6.0F; }
          WingsPreview.ZOOM = 0.41F;
          float[] zb = new float[W * H]; java.util.Arrays.fill(zb, Float.MAX_VALUE);
          float[] rgb = new float[W * H * 3];
@@ -83,7 +87,7 @@ public class ButterflyFpPreview {
          }
          g.drawImage(img, (i % 4) * W, (i / 4) * H, null);
          g.setColor(Color.WHITE);
-         g.drawString(t < 0 ? "zu" : (t > 5 ? "offen" : "t=" + t), (i % 4) * W + 4, (i / 4) * H + 14);
+         g.drawString(name + " t=" + String.format("%.2f", t), (i % 4) * W + 4, (i / 4) * H + 14);
       }
       ImageIO.write(sheet, "png", new File(a[0]));
    }

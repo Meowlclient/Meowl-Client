@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "nebula",
-  "version": "1.52.7",
+  "version": "1.54.0",
   "name": "Meowl Client",
   "description": "Meowl Client: neues MenÃ¼ mit Live-Vorschauen, Crosshair-Editor + PvP-Addons, Toggle Sprint/Sneak, Totem-Pop-ZÃ¤hler, Tiers (MCPVP/MCTiers-VTL, PvPTiers, Subtiers) links/rechts am Namen, eigener Nametag, Item Beam, Totem Inspect, Facecam, Block Images, Sheriff Duel, Meowl Pet, Emote-Rad, AFK-Szenen (WÃ¼sten- und Sternenschlacht) und mehr. Optional mit dem Addon Meowl Combat.",
   "authors": [

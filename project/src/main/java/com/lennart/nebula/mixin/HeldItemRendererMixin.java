@@ -137,7 +137,7 @@ public abstract class HeldItemRendererMixin {
          matrices.pushPose();
          com.lennart.nebula.fx.KarambitHand.armMotion(matrices, right);
          ((HeldItemRendererAccessor)this).meowl$renderArm(matrices, queue, light, equipProgress, swingProgress, player.getMainArm());
-         com.lennart.nebula.fx.KarambitHand.drawKnife(matrices, queue, right);
+         com.lennart.nebula.fx.KarambitHand.drawKnife(matrices, queue, right, swingProgress);
          matrices.popPose();
          ci.cancel();
       }
