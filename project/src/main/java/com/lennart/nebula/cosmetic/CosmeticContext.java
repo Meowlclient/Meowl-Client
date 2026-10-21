@@ -56,13 +56,30 @@ public final class CosmeticContext {
    }
 
    /** Feste Teile. */
+   /** Messschlüssel der gerade gezeichneten Kosmetik (Leistungs-Menü). */
+   public Object perfKey;
+
    public void solid(CosmeticContext.Painter p) {
-      this.queue.submitCustomGeometry(this.matrices, WorldRender.solidColor(), (entry, vc) -> p.paint(local(entry), vc));
+      Object key = this.perfKey;
+      this.queue.submitCustomGeometry(this.matrices, WorldRender.solidColor(), (entry, vc) -> {
+         long t0 = com.lennart.nebula.util.Perf.start();
+         p.paint(local(entry), vc);
+         if (key != null) {
+            com.lennart.nebula.util.Perf.add(key, t0);
+         }
+      });
    }
 
    /** Leuchtende Teile (additiv, Alpha = Stärke). */
    public void glow(CosmeticContext.Painter p) {
-      this.queue.submitCustomGeometry(this.matrices, WorldRender.glow(), (entry, vc) -> p.paint(local(entry), vc));
+      Object key = this.perfKey;
+      this.queue.submitCustomGeometry(this.matrices, WorldRender.glow(), (entry, vc) -> {
+         long t0 = com.lennart.nebula.util.Perf.start();
+         p.paint(local(entry), vc);
+         if (key != null) {
+            com.lennart.nebula.util.Perf.add(key, t0);
+         }
+      });
    }
 
    public void onHead(Runnable r) {

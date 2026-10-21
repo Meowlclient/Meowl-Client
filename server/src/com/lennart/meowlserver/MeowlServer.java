@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 
 public final class MeowlServer {
    private static final Logger LOG = Logger.getLogger("MeowlServer");
-   public static final String VERSION = "1.21.3";
+   public static final String VERSION = "1.22.0";
    private static final int MAX_JSON = 16384;
    private final AuthService auth;
    private final EventHub events = new EventHub();
@@ -349,12 +349,20 @@ public final class MeowlServer {
                if (seg.length >= 4) {
                   // /streams/<id>/frame bzw. /streams/<id>/audio: aktuelles Bild / neuer Ton der gemeinsamen Wiedergabe
                   WatchSession w = this.streams.session(seg[2]);
-                  long afterSeq = Long.parseLong(query(ex.getRequestURI()).getOrDefault("after", "0"));
+                  Map<String, String> sq = query(ex.getRequestURI());
+                  long afterSeq = Long.parseLong(sq.getOrDefault("after", "0"));
                   byte[] body = null;
                   long seq = 0L;
                   String type = "image/jpeg";
                   if (w != null && seg[3].equals("frame")) {
-                     this.limiter.check(user, "streams.frame", 90.0, 40.0);
+                     this.limiter.check(user, "streams.frame", 120.0, 70.0);
+                     // neuere Clients: ?want=<Nummer> wartet bis zu 1 s auf genau dieses Bild (mehrere Anfragen gleichzeitig = höhere Bildrate)
+                     if (sq.containsKey("want")) {
+                        long want = Long.parseLong(sq.get("want"));
+                        w.waitFrame(want, 1000L);
+                        afterSeq = want - 1L;
+                     }
+
                      if (w.frame() != null && w.frameSeq() > afterSeq) {
                         body = w.frame();
                         seq = w.frameSeq();
@@ -377,6 +385,7 @@ public final class MeowlServer {
                   ex.getResponseHeaders().add("Content-Type", type);
                   ex.getResponseHeaders().add("X-Seq", String.valueOf(seq));
                   ex.getResponseHeaders().add("X-Rate", String.valueOf(WatchSession.AUDIO_RATE));
+                  ex.getResponseHeaders().add("X-Epoch", String.valueOf(w.epoch()));
                   ex.sendResponseHeaders(200, body.length);
                   try (OutputStream out = ex.getResponseBody()) {
                      out.write(body);
@@ -403,6 +412,27 @@ public final class MeowlServer {
                   }
 
                   ws.setPaused(!ws.paused());
+                  this.broadcastToServer(sc.server(), "stream_added", sc.toJson());
+                  sendJson(ex, 200, sc.toJson());
+                  break;
+               }
+
+               if (pseg.length >= 4 && pseg[3].equals("seek")) {
+                  // Vorspulen/Zurückspulen für alle Zuschauer: {"to": Sekunden} oder {"by": ±Sekunden}
+                  this.limiter.check(user, "streams.seek", 10.0, 3.0);
+                  StreamStore.Screen sc = this.streams.screen(pseg[2]);
+                  WatchSession ws = this.streams.session(pseg[2]);
+                  if (sc == null || ws == null || !sc.server().equals(me.mcServer())) {
+                     throw new ApiException(404, "Bildschirm nicht gefunden");
+                  }
+
+                  if (!ws.seekable()) {
+                     throw new ApiException(409, "Livestreams kann man nicht spulen");
+                  }
+
+                  Map<String, Object> sb = jsonBody(ex);
+                  double target = sb.containsKey("to") ? Json.num(sb, "to", 0.0, 1.0E7) : ws.position() + Json.num(sb, "by", -1.0E7, 1.0E7);
+                  ws.seek(target);
                   this.broadcastToServer(sc.server(), "stream_added", sc.toJson());
                   sendJson(ex, 200, sc.toJson());
                   break;

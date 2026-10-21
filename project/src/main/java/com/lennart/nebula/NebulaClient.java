@@ -154,6 +154,7 @@ public class NebulaClient implements ClientModInitializer {
       this.moduleManager.register(new com.lennart.nebula.module.mods.Zoom());
       this.moduleManager.register(new com.lennart.nebula.module.mods.Freelook());
       this.moduleManager.register(new com.lennart.nebula.module.mods.Tpa());
+      this.moduleManager.register(new com.lennart.nebula.module.mods.Performance());
       com.lennart.nebula.cosmetic.mods.CosmeticModules.registerAll(this.moduleManager);
       this.moduleManager.register(new ClientSettings());
 

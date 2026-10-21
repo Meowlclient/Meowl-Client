@@ -124,6 +124,20 @@ public abstract class Cosmetic extends Module {
       return this.showOthers.get();
    }
 
+   public void setShowOthers(boolean show) {
+      this.showOthers.set(show);
+   }
+
+   /** Messschlüssel für die Kosmetik anderer Spieler (Leistungs-Menü). */
+   public record Others(Cosmetic cosmetic) {
+   }
+
+   private final Others othersKey = new Others(this);
+
+   public Others othersKey() {
+      return this.othersKey;
+   }
+
    /** Zeichnen am Spieler (Körperraum, siehe {@link CosmeticContext}). */
    public abstract void render(CosmeticContext c, CosmeticValue v);
 

@@ -48,6 +48,9 @@ public final class UpdateManager {
    private boolean noticeShown;
    private boolean readyReminded;
    private long restartArmed;
+   /** Version, zu der schon gefragt wurde bzw. die mit „Später“ abgelehnt wurde (gilt bis zum nächsten Start). */
+   private Version prompted;
+   private Version declined;
    private final Path marker = FabricLoader.getInstance().getConfigDir().resolve("meowl-update.json");
 
    public UpdateManager(UpdateManager.Settings settings) {
@@ -189,7 +192,29 @@ public final class UpdateManager {
       return this.state == UpdateManager.State.AVAILABLE || this.state == UpdateManager.State.DOWNLOADING || this.state == UpdateManager.State.READY;
    }
 
+   /** „Später“: zu dieser Version bis zum nächsten Start nicht mehr fragen. */
+   public void declineCurrent() {
+      UpdateInfo info = this.latest;
+      this.declined = info != null ? info.version() : this.readyVersion;
+   }
+
+   /** Im Hauptmenü (ohne Welt): einmal pro Version fragen, ob installiert werden soll. */
+   private void maybePrompt() {
+      UpdateInfo info = this.latest;
+      if (this.state != UpdateManager.State.AVAILABLE || info == null || this.mc.level != null) {
+         return;
+      }
+
+      net.minecraft.client.gui.screens.Screen screen = this.mc.screen;
+      boolean title = screen instanceof net.minecraft.client.gui.screens.TitleScreen || screen instanceof com.lennart.nebula.gui.MeowlTitleScreen;
+      if (title && !info.version().equals(this.declined) && !info.version().equals(this.prompted)) {
+         this.prompted = info.version();
+         this.mc.setScreen(new com.lennart.nebula.gui.UpdatePromptScreen(screen, this));
+      }
+   }
+
    public void tick() {
+      this.maybePrompt();
       if (this.mc.player != null) {
          if (this.pendingNotice != null && !this.noticeShown) {
             this.noticeShown = true;
@@ -250,10 +275,8 @@ public final class UpdateManager {
                               } else {
                                  this.state = UpdateManager.State.AVAILABLE;
                                  this.message = "Version " + info.version() + " verfügbar (du hast " + this.current + ")";
+                                 // nie automatisch laden: erst fragen (Fenster im Hauptmenü, im Spiel Chat-Knöpfe)
                                  this.notifyAvailable(info);
-                                 if (this.settings.autoDownload()) {
-                                    this.download();
-                                 }
                               }
                            } else {
                               this.state = before == UpdateManager.State.READY ? UpdateManager.State.READY : UpdateManager.State.UP_TO_DATE;
@@ -275,11 +298,13 @@ public final class UpdateManager {
    private void notifyAvailable(UpdateInfo info) {
       if (!this.notified) {
          this.notified = true;
-         com.lennart.nebula.compat.Compat.toast(Component.literal("Meowl Client " + info.version()), Component.literal("Update verfügbar – im Meowl-Menü installieren"));
+         com.lennart.nebula.compat.Compat.toast(Component.literal("Meowl Client " + info.version()), Component.literal("Update verfügbar – willst du es installieren?"));
          if (this.mc.player != null) {
             ChatUtil.chat(
                Component.literal("§dUpdate verfügbar: §f" + this.current + " → " + info.version() + " ")
-                  .append(ChatUtil.button("[Herunterladen]", 4906624, "/meowl update download", "Lädt das Update sicher herunter"))
+                  .append(ChatUtil.button("[Installieren]", 4906624, "/meowl update download", "Lädt das Update herunter – installiert wird beim Beenden von Minecraft"))
+                  .append(Component.literal(" "))
+                  .append(ChatUtil.button("[Später]", 9474192, "/meowl update later", "Diesmal nicht – beim nächsten Start wieder fragen"))
             );
          }
       }
@@ -386,8 +411,6 @@ public final class UpdateManager {
       boolean checkEnabled();
 
       double intervalHours();
-
-      boolean autoDownload();
 
       String sourceUrl();
    }

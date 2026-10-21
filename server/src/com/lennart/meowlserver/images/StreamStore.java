@@ -176,6 +176,9 @@ public final class StreamStore {
          WatchSession w = STORE == null ? null : STORE.sessions.get(this.id);
          m.put("status", w == null ? "" : w.status());
          m.put("paused", w != null && w.paused());
+         // Abspielposition und Länge (Sekunden) für die Zeitleiste beim Vorspulen; dur ≤ 0 = Livestream
+         m.put("pos", w == null ? 0.0 : Math.round(w.position() * 10.0) / 10.0);
+         m.put("dur", w == null ? 0.0 : w.duration());
          // Serverzeit mitschicken, damit Clients die Abspielposition (YouTube) trotz falsch gehender Uhr berechnen können
          m.put("now", System.currentTimeMillis());
          return m;

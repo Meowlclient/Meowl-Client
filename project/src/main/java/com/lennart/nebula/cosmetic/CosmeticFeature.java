@@ -46,6 +46,12 @@ public class CosmeticFeature extends RenderLayer<AvatarRenderState, PlayerModel>
          }
 
          Entity entity = mc.level.getEntity(state.id);
+         // Leistung: Kosmetik anderer nur bis zur eingestellten Sichtweite
+         if (entity instanceof Player far && far != mc.player && mc.player != null
+            && far.distanceToSqr(mc.player) > com.lennart.nebula.module.mods.Performance.cosmeticRangeSqr()) {
+            return;
+         }
+
          if (entity instanceof Player player) {
             int block = LightTexture.block(light);
             int sky = LightTexture.sky(light);
@@ -70,8 +76,11 @@ public class CosmeticFeature extends RenderLayer<AvatarRenderState, PlayerModel>
                      ctx = new CosmeticContext(matrices, queue, state, this.getParentModel(), player, bright, Cosmetics.time() + (player.getId() % 97) * 0.37F);
                   }
 
+                  long t0 = com.lennart.nebula.util.Perf.start();
+                  Object key = player == mc.player ? c : c.othersKey();
                   try {
                      matrices.pushPose();
+                     ctx.perfKey = key;
                      ctx.outer = v.outer();
                      if (v.shifted()) {
                         matrices.translate(v.ox() / 16.0F, -v.oy() / 16.0F, -v.oz() / 16.0F);
@@ -81,6 +90,7 @@ public class CosmeticFeature extends RenderLayer<AvatarRenderState, PlayerModel>
                   } catch (RuntimeException var14) {
                   } finally {
                      matrices.popPose();
+                     com.lennart.nebula.util.Perf.add(key, t0);
                   }
                }
             }

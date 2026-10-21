@@ -132,7 +132,7 @@ public final class Cosmetics {
                   CosmeticValue v = valueFor(p, c);
                   if (v != null) {
                      try {
-                        if (!firstPerson || c.particlesInFirstPerson()) {
+                        if ((!firstPerson || c.particlesInFirstPerson()) && com.lennart.nebula.module.mods.Performance.cosmeticParticles()) {
                            c.particles(world, p, v, R);
                         }
                      } catch (RuntimeException var10) {
