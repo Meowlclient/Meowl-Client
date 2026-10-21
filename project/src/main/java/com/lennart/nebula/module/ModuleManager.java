@@ -54,7 +54,9 @@ public class ModuleManager {
       if (client.player != null && client.level != null) {
          for (Module module : this.modules) {
             if (module.isEnabled()) {
+               long t0 = com.lennart.nebula.util.Perf.start();
                module.onPreTick();
+               com.lennart.nebula.util.Perf.add(module, t0);
             }
          }
       }
@@ -65,7 +67,9 @@ public class ModuleManager {
       if (client.player != null && client.level != null) {
          for (Module module : this.modules) {
             if (module.isEnabled()) {
+               long t0 = com.lennart.nebula.util.Perf.start();
                module.onTick();
+               com.lennart.nebula.util.Perf.add(module, t0);
             }
          }
       }
@@ -73,9 +77,13 @@ public class ModuleManager {
 
    public void onRenderHud(Minecraft client, GuiGraphicsExtractor context, float tickDelta) {
       if (client.player != null && client.level != null) {
+         // einmal pro Bild: Messfenster für das Leistungs-Menü weiterschalten
+         com.lennart.nebula.util.Perf.frame();
          for (Module module : this.modules) {
             if (module.isEnabled()) {
+               long t0 = com.lennart.nebula.util.Perf.start();
                module.onRenderHud(context, tickDelta);
+               com.lennart.nebula.util.Perf.add(module, t0);
             }
          }
       }
@@ -85,7 +93,9 @@ public class ModuleManager {
       if (client.player != null && client.level != null) {
          for (Module module : this.modules) {
             if (module.isEnabled()) {
+               long t0 = com.lennart.nebula.util.Perf.start();
                module.onRenderWorld(context, tickDelta);
+               com.lennart.nebula.util.Perf.add(module, t0);
             }
          }
       }

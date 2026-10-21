@@ -21,12 +21,9 @@ import net.minecraft.world.item.Items;
 
 public class ClientSettings extends Module {
    private final BooleanSetting checkUpdates = this.add(
-      new BooleanSetting("Nach Updates suchen", "Beim Start und danach regelmäßig im Hintergrund prüfen", true)
+      new BooleanSetting("Nach Updates suchen", "Beim Start und regelmäßig prüfen – installiert wird nur, wenn du zustimmst", true)
    );
    private final NumberSetting interval = this.add(new NumberSetting("Prüf-Intervall", "Wie oft nach Updates gesucht wird", 6.0, 1.0, 24.0, 1.0, "Std."));
-   private final BooleanSetting autoDownload = this.add(
-      new BooleanSetting("Automatisch updaten", "Neue Versionen vom Meowl Server automatisch herunterladen; installiert wird beim Beenden von Minecraft", true)
-   );
    private final TextSetting updateUrl = this.add(
       new TextSetting("Update-Quelle", "Leer = dein Meowl Server. Nur ändern, wenn Updates woanders liegen.", "", 200)
          .validator(s -> s.isEmpty() || MeowlService.isValidUrl(s))
@@ -129,7 +126,6 @@ public class ClientSettings extends Module {
       this.icon(Items.NETHER_STAR);
       this.hidden();
       this.interval.setVisibility(this.checkUpdates::get);
-      this.autoDownload.setVisibility(this.checkUpdates::get);
       this.menuChosen.setVisibility(() -> false);
       this.viewersOn.setVisibility(() -> false);
       this.updates = new UpdateManager(new UpdateManager.Settings() {
@@ -141,11 +137,6 @@ public class ClientSettings extends Module {
          @Override
          public double intervalHours() {
             return ClientSettings.this.interval.get();
-         }
-
-         @Override
-         public boolean autoDownload() {
-            return ClientSettings.this.autoDownload.get();
          }
 
          @Override
@@ -180,6 +171,10 @@ public class ClientSettings extends Module {
             ChatUtil.chat("§7" + this.updates.message());
          }
 
+         return 1;
+      })).then(ClientCommands.literal("later").executes(c -> {
+         this.updates.declineCurrent();
+         ChatUtil.chat("§7Okay – du wirst beim nächsten Start wieder gefragt.");
          return 1;
       })).then(ClientCommands.literal("download").executes(c -> {
          if (this.updates.state() != UpdateManager.State.AVAILABLE && this.updates.state() != UpdateManager.State.FAILED) {

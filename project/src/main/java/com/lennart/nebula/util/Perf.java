@@ -1,0 +1,148 @@
+package com.lennart.nebula.util;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Leichter Messer für das Leistungs-Menü: summiert, wie viel Rechenzeit (CPU, Render-Thread) jedes Modul und jede
+ * Kosmetik pro Bild kostet, und wie viel CPU die Hintergrund-Threads und Hilfsprozesse des Clients ziehen. Ausgewertet
+ * wird jede Sekunde; eine Messung kostet nur zwei {@code nanoTime}-Aufrufe.
+ */
+public final class Perf {
+   /** Schlüssel → gesammelte Nanosekunden im laufenden Messfenster (nur Render-/Client-Thread). */
+   private static final Map<Object, long[]> ACC = new HashMap<>();
+   private static volatile Map<Object, Double> msPerFrame = Map.of();
+   private static volatile Map<String, Double> background = Map.of();
+   private static volatile double frameMs;
+   private static volatile int fps;
+   private static long windowStart = System.nanoTime();
+   private static int frames;
+   private static final Map<Long, Long> THREAD_CPU = new HashMap<>();
+   private static final Map<Long, Long> PROC_CPU = new HashMap<>();
+   private static final ThreadMXBean BEAN = ManagementFactory.getThreadMXBean();
+
+   private Perf() {
+   }
+
+   public static long start() {
+      return System.nanoTime();
+   }
+
+   /** Zeit seit {@code t0} dem Schlüssel gutschreiben (nur vom Client-Thread aufrufen). */
+   public static void add(Object key, long t0) {
+      long d = System.nanoTime() - t0;
+      long[] a = ACC.get(key);
+      if (a == null) {
+         a = new long[1];
+         ACC.put(key, a);
+      }
+
+      a[0] += d;
+   }
+
+   /** Einmal pro gezeichnetem Bild (in der Welt). */
+   public static void frame() {
+      frames++;
+      long now = System.nanoTime();
+      long win = now - windowStart;
+      if (win < 1000000000L) {
+         return;
+      }
+
+      Map<Object, Double> out = new HashMap<>();
+      for (Map.Entry<Object, long[]> e : ACC.entrySet()) {
+         if (e.getValue()[0] > 0L) {
+            out.put(e.getKey(), e.getValue()[0] / 1.0E6 / Math.max(1, frames));
+         }
+
+         e.getValue()[0] = 0L;
+      }
+
+      msPerFrame = out;
+      fps = Math.round(frames * 1.0E9F / win);
+      frameMs = win / 1.0E6 / Math.max(1, frames);
+      background = sampleBackground(win);
+      frames = 0;
+      windowStart = now;
+   }
+
+   /** CPU der eigenen Threads („Meowl-…“) und Hilfsprozesse (z.B. PowerShell für Spotify) in % eines Kerns. */
+   private static Map<String, Double> sampleBackground(long win) {
+      Map<String, Double> out = new LinkedHashMap<>();
+      try {
+         if (BEAN.isThreadCpuTimeSupported()) {
+            Map<Long, Long> seen = new HashMap<>();
+            for (Thread t : Thread.getAllStackTraces().keySet()) {
+               String name = t.getName();
+               if (!name.startsWith("Meowl")) {
+                  continue;
+               }
+
+               long cpu = BEAN.getThreadCpuTime(t.threadId());
+               if (cpu < 0L) {
+                  continue;
+               }
+
+               seen.put(t.threadId(), cpu);
+               Long before = THREAD_CPU.get(t.threadId());
+               if (before != null && cpu > before) {
+                  out.merge(name, (cpu - before) * 100.0 / win, Double::sum);
+               }
+            }
+
+            THREAD_CPU.clear();
+            THREAD_CPU.putAll(seen);
+         }
+
+         Map<Long, Long> seenProc = new HashMap<>();
+         ProcessHandle.current().descendants().forEach(p -> {
+            var info = p.info();
+            info.totalCpuDuration().ifPresent(d -> {
+               long cpu = d.toNanos();
+               seenProc.put(p.pid(), cpu);
+               Long before = PROC_CPU.get(p.pid());
+               if (before != null && cpu > before) {
+                  String cmd = info.command().orElse("Prozess").replace('\\', '/');
+                  String exe = cmd.substring(cmd.lastIndexOf('/') + 1);
+                  out.merge("Prozess: " + exe, (cpu - before) * 100.0 / win, Double::sum);
+               }
+            });
+         });
+         PROC_CPU.clear();
+         PROC_CPU.putAll(seenProc);
+      } catch (RuntimeException var7) {
+      }
+
+      return out;
+   }
+
+   /** Millisekunden pro Bild je Schlüssel (letzte Sekunde). */
+   public static Map<Object, Double> msPerFrame() {
+      return msPerFrame;
+   }
+
+   /** CPU-Last der Hintergrund-Threads/-Prozesse in % eines Kerns (letzte Sekunde). */
+   public static Map<String, Double> background() {
+      return background;
+   }
+
+   public static double frameMs() {
+      return frameMs;
+   }
+
+   public static int fps() {
+      return fps;
+   }
+
+   /** Für Listen: Einträge nach Kosten sortiert. */
+   public static <K> List<Map.Entry<K, Double>> sorted(Map<K, Double> m) {
+      List<Map.Entry<K, Double>> l = new ArrayList<>(m.entrySet());
+      l.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+      return l;
+   }
+}

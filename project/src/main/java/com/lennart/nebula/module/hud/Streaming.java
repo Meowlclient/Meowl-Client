@@ -61,7 +61,7 @@ public class Streaming extends Module {
    );
    private final TextSetting link = this.add(new TextSetting("Link", "YouTube-Video, Twitch-Stream oder TikTok", "", 300));
    private final NumberSetting volume = this.add(new NumberSetting("Lautstärke", "Lautstärke der Videos (wird mit Abstand zum Bildschirm leiser)", 70.0, 0.0, 100.0, 5.0, "%"));
-   private final NumberSetting fps = this.add(new NumberSetting("Bildrate", "Wie oft das Bild vom Server geholt wird (Server liefert bis 24)", 24.0, 4.0, 30.0, 1.0, "fps"));
+   private final NumberSetting fps = this.add(new NumberSetting("Bildrate", "Wie viele Bilder pro Sekunde höchstens geholt werden (Server liefert bis 30)", 30.0, 4.0, 30.0, 1.0, "fps"));
    private final BooleanSetting showOthers = this.add(new BooleanSetting("Videos anderer zeigen", "Bildschirme anderer Meowl-Spieler zeigen und mitschauen", true));
    private final BooleanSetting hudShow = this.add(new BooleanSetting("Im HUD zeigen", "Das laufende Video zusätzlich klein im HUD (im HUD-Editor verschieben)", false));
    private final NumberSetting hudWidth = this.add(new NumberSetting("HUD-Breite", "Breite des Videos im HUD", 160.0, 80.0, 480.0, 5.0, "px"));
@@ -69,6 +69,13 @@ public class Streaming extends Module {
    private final KeybindSetting placeKey = this.add(
       new KeybindSetting("Platzier-Taste", "Platzier-Modus an/aus: Rechtsklick hängt den Bildschirm an die Wand, Linksklick nimmt ihn ab", Bind.NONE)
    );
+   private final KeybindSetting seekBackKey = this.add(
+      new KeybindSetting("Zurückspulen", "Auf den Bildschirm schauen und drücken: 10 Sekunden zurück (für alle)", Bind.keyboard(263))
+   );
+   private final KeybindSetting seekFwdKey = this.add(
+      new KeybindSetting("Vorspulen", "Auf den Bildschirm schauen und drücken: 10 Sekunden vor (für alle)", Bind.keyboard(262))
+   );
+   private final NumberSetting seekStep = this.add(new NumberSetting("Spul-Schritt", "Wie weit pro Tastendruck gespult wird", 10.0, 5.0, 60.0, 5.0, "s"));
    private final NumberSetting screenWidth = this.add(new NumberSetting("Bildschirm-Breite", "Breite des Wand-Bildschirms (Höhe im 16:9-Format)", 4.0, 1.0, 16.0, 0.5, "Blöcke"));
    private final Map<String, Streaming.Wall> walls = new ConcurrentHashMap<>();
    private final ExecutorService net = Executors.newFixedThreadPool(2, r -> {
@@ -81,8 +88,15 @@ public class Streaming extends Module {
    private volatile String activeId;
    private volatile float audioGain;
    private long lastFrameFetch;
-   private volatile boolean fetchingFrame;
+   /** Gleichzeitig offene Bild-Anfragen (Long-Poll): zwei, damit das nächste Bild schon unterwegs ist. */
+   private final java.util.concurrent.atomic.AtomicInteger inflight = new java.util.concurrent.atomic.AtomicInteger();
+   /** Nummer des nächsten Bilds, auf das eine Anfrage wartet (0 = erst das aktuelle holen). */
+   private volatile long nextWant;
    private volatile long frameSeq;
+   private boolean seekBackDown;
+   private boolean seekFwdDown;
+   /** Zeitleiste auf dem Bildschirm zeigen bis (ms). */
+   private long timelineUntil;
    private volatile int[] pendingPx;
    private volatile int pendingW;
    private volatile int pendingH;
@@ -98,7 +112,15 @@ public class Streaming extends Module {
    /** Gerade abgenommene Bildschirme: eine ältere Server-Liste darf sie nicht wieder einfügen. */
    private final Map<String, Long> removedAt = new java.util.concurrent.ConcurrentHashMap<>();
 
-   private record Wall(String id, String link, String dim, BlockPos pos, Direction facing, double w, String creator, String name, String status, boolean paused) {
+   private record Wall(
+      String id, String link, String dim, BlockPos pos, Direction facing, double w, String creator, String name, String status, boolean paused, double at, double dur,
+      long received
+   ) {
+      /** Aktuelle Abspielposition (Sekunden), seit der letzten Meldung weitergerechnet. */
+      double position() {
+         double p = this.paused || !this.status.isEmpty() ? this.at : this.at + (System.currentTimeMillis() - this.received) / 1000.0;
+         return this.dur > 0.0 ? Math.min(this.dur, p) : p;
+      }
    }
 
    public Streaming() {
@@ -182,7 +204,10 @@ public class Streaming extends Module {
             d.get("creator").getAsString(),
             d.has("name") ? d.get("name").getAsString() : "",
             d.has("status") ? d.get("status").getAsString() : "",
-            d.has("paused") && d.get("paused").getAsBoolean()
+            d.has("paused") && d.get("paused").getAsBoolean(),
+            d.has("pos") ? d.get("pos").getAsDouble() : 0.0,
+            d.has("dur") ? d.get("dur").getAsDouble() : 0.0,
+            System.currentTimeMillis()
          );
          this.walls.put(w.id(), w);
       } catch (RuntimeException var4) {
@@ -286,6 +311,34 @@ public class Streaming extends Module {
       }));
    }
 
+   /** Pfeiltaste beim Hinschauen: für alle vor- bzw. zurückspulen. */
+   private void seek(Streaming.Wall w, double by) {
+      if (w.dur() <= 0.0) {
+         ChatUtil.actionBar("§7Livestreams kann man nicht spulen");
+         return;
+      }
+
+      JsonObject o = new JsonObject();
+      o.addProperty("by", by);
+      this.timelineUntil = System.currentTimeMillis() + 3500L;
+      MeowlService.get().post("/streams/" + w.id() + "/seek", o).whenComplete((r, e) -> this.mc.execute(() -> {
+         if (e == null && r != null && r.ok() && r.json() != null) {
+            this.putShared(r.json());
+            Streaming.Wall now = this.walls.get(w.id());
+            if (now != null) {
+               ChatUtil.actionBar((by > 0 ? "§b⏩ " : "§b⏪ ") + clock(now.position()) + " §7/ " + clock(now.dur()));
+            }
+         } else {
+            ChatUtil.actionBar("§cSpulen ging nicht" + (r != null && !r.ok() ? ": " + r.error() : ""));
+         }
+      }));
+   }
+
+   private static String clock(double sec) {
+      long s = Math.max(0L, Math.round(sec));
+      return s >= 3600L ? String.format("%d:%02d:%02d", s / 3600L, s / 60L % 60L, s % 60L) : String.format("%d:%02d", s / 60L, s % 60L);
+   }
+
    private void removeLookedAt() {
       Streaming.Wall best = this.lookedAt();
       if (best != null) {
@@ -373,10 +426,12 @@ public class Streaming extends Module {
          }
       }
 
+      this.lookedAtCached = this.mc.player != null && this.mc.level != null ? this.lookedAt() : null;
       String id = near == null ? null : near.id();
       if (id == null ? this.activeId != null : !id.equals(this.activeId)) {
          this.activeId = id;
          this.frameSeq = 0L;
+         this.nextWant = 0L;
          this.pendingPx = null;
       }
 
@@ -391,34 +446,67 @@ public class Streaming extends Module {
       }
    }
 
+   /**
+    * Bilder holen: zwei Anfragen gleichzeitig offen (Long-Poll mit {@code want}), der Server antwortet, sobald das
+    * gewünschte Bild fertig ist – so kommt jedes Bild ohne Wartezeit für den Hin- und Rückweg an (bis 30 fps).
+    */
    private void requestFrame() {
       String id = this.activeId;
       long now = System.currentTimeMillis();
-      if (id == null || this.fetchingFrame || now - this.lastFrameFetch < 1000L / Math.max(1, this.fps.getInt())) {
+      if (id == null) {
          return;
       }
 
-      this.lastFrameFetch = now;
-      this.fetchingFrame = true;
-      MeowlService.get().get("/streams/" + id + "/frame?after=" + this.frameSeq).whenComplete((r, e) -> {
-         try {
-            if (e == null && r != null && r.status() == 200 && r.bytes() != null && id.equals(this.activeId)) {
-               String seq = header(r.headers(), "x-seq");
-               BufferedImage img = ImageIO.read(new ByteArrayInputStream(r.bytes()));
-               if (img != null && img.getWidth() <= 1280 && img.getHeight() <= 720) {
-                  this.pendingPx = com.lennart.nebula.facecam.VideoEncoder.pixels(img);
-                  this.pendingW = img.getWidth();
-                  this.pendingH = img.getHeight();
-                  if (seq != null) {
-                     this.frameSeq = Long.parseLong(seq);
-                  }
-               }
-            }
-         } catch (Exception var7) {
-         } finally {
-            this.fetchingFrame = false;
+      long minGap = 1000L / Math.max(1, this.fps.getInt()) - 4L;
+      while (this.inflight.get() < 2 && now - this.lastFrameFetch >= minGap) {
+         long want = this.nextWant;
+         if (want <= 0L && this.inflight.get() > 0) {
+            return;
          }
-      });
+
+         this.lastFrameFetch = now;
+         this.inflight.incrementAndGet();
+         String q = want <= 0L ? "after=" + this.frameSeq : "want=" + want + "&after=" + (want - 1L);
+         if (want > 0L) {
+            this.nextWant = want + 1L;
+         }
+
+         MeowlService.get().get("/streams/" + id + "/frame?" + q).whenComplete((r, e) -> {
+            try {
+               if (e == null && r != null && r.status() == 200 && r.bytes() != null && id.equals(this.activeId)) {
+                  String seqText = header(r.headers(), "x-seq");
+                  long seq = seqText == null ? this.frameSeq + 1L : Long.parseLong(seqText);
+                  if (seq > this.frameSeq) {
+                     BufferedImage img = ImageIO.read(new ByteArrayInputStream(r.bytes()));
+                     if (img != null && img.getWidth() <= 1280 && img.getHeight() <= 720) {
+                        int[] px = com.lennart.nebula.facecam.VideoEncoder.pixels(img);
+                        synchronized (this) {
+                           if (seq > this.frameSeq) {
+                              this.pendingPx = px;
+                              this.pendingW = img.getWidth();
+                              this.pendingH = img.getHeight();
+                              this.frameSeq = seq;
+                           }
+                        }
+                     }
+                  }
+
+                  if (seq >= this.nextWant) {
+                     this.nextWant = seq + 1L;
+                  }
+               } else if (r != null && r.status() == 204) {
+                  // kein neues Bild (Pause/Laden): wieder beim aktuellen Stand anfangen statt immer weiter vorauszufragen
+                  this.nextWant = this.frameSeq + 1L;
+               }
+            } catch (Exception var9) {
+            } finally {
+               this.inflight.decrementAndGet();
+            }
+         });
+         if (want <= 0L) {
+            return;
+         }
+      }
    }
 
    private static String header(Map<String, List<String>> headers, String name) {
@@ -436,6 +524,7 @@ public class Streaming extends Module {
       SourceDataLine line = null;
       long seq = 0L;
       String forId = null;
+      String epoch = null;
       try {
          int rate = 22050;
          AudioFormat fmt = new AudioFormat(rate, 16, 1, true, false);
@@ -462,6 +551,14 @@ public class Streaming extends Module {
                if (s != null) {
                   seq = Long.parseLong(s);
                }
+
+               // vorgespult: alten Ton sofort verwerfen
+               String ep = header(r.headers(), "x-epoch");
+               if (ep != null && epoch != null && !ep.equals(epoch)) {
+                  line.flush();
+               }
+
+               epoch = ep;
 
                // Abtastrate vom Server übernehmen (neuere Server: 44100 Hz)
                String rs = header(r.headers(), "x-rate");
@@ -542,6 +639,17 @@ public class Streaming extends Module {
       }
 
       this.placeDown = key;
+      boolean back = this.seekBackKey.get().isPressed();
+      boolean fwd = this.seekFwdKey.get().isPressed();
+      if ((back && !this.seekBackDown || fwd && !this.seekFwdDown) && this.mc.gui.screen() == null && this.mc.player != null && this.mc.level != null) {
+         Streaming.Wall w = this.lookedAt();
+         if (w != null) {
+            this.seek(w, (fwd ? 1.0 : -1.0) * this.seekStep.get());
+         }
+      }
+
+      this.seekBackDown = back;
+      this.seekFwdDown = fwd;
       if (!this.placing && this.mc.player != null && this.mc.level != null && this.mc.gui.screen() == null && this.mc.options.keyUse.isDown()) {
          Streaming.Wall w = this.lookedAt();
          if (w != null) {
@@ -612,6 +720,10 @@ public class Streaming extends Module {
          }
 
          m.popPose();
+         if (live && w.dur() > 0.0 && (System.currentTimeMillis() < this.timelineUntil || w.paused() || w == this.lookedAtCached)) {
+            this.timeline(context, g, w);
+         }
+
          if (live && w.paused()) {
             this.label(context, g, "⏸");
          } else if (!live) {
@@ -633,6 +745,42 @@ public class Streaming extends Module {
             m.popPose();
          }
       }
+   }
+
+   /** Bildschirm, auf den man gerade schaut (einmal pro Tick bestimmt). */
+   private Streaming.Wall lookedAtCached;
+
+   /** Zeitleiste unten im Bild: Fortschritt und Zeit, beim Hinschauen und nach dem Spulen. */
+   private void timeline(WorldCtx ctx, ImageGeometry g, Streaming.Wall w) {
+      double f = Math.max(0.0, Math.min(1.0, w.position() / w.dur()));
+      Vec3 cam = ctx.cameraPos();
+      PoseStack m = ctx.matrices();
+      Vec3 off = g.normal().scale(0.012);
+      double barH = Math.max(0.04, g.h() * 0.022);
+      double inset = g.w() * 0.04;
+      Vec3 bl = g.at(inset, g.h() * 0.06).add(off);
+      ImageGeometry track = new ImageGeometry(bl, g.right(), g.up(), g.normal(), g.w() - inset * 2.0, barH);
+      ImageGeometry done = new ImageGeometry(bl.add(g.normal().scale(0.004)), g.right(), g.up(), g.normal(), (g.w() - inset * 2.0) * f, barH);
+      m.pushPose();
+      m.translate(-cam.x, -cam.y, -cam.z);
+      colorQuad(m, context(ctx), track, 0xC0303038);
+      colorQuad(m, context(ctx), done, 0xFFB98CFF);
+      m.popPose();
+      Font tr = this.mc.font;
+      String text = clock(w.position()) + " / " + clock(w.dur());
+      Vec3 c = g.at(g.w() / 2.0, g.h() * 0.06 + barH + g.h() * 0.05).add(g.normal().scale(0.02));
+      m.pushPose();
+      m.translate(c.x - cam.x, c.y - cam.y, c.z - cam.z);
+      float yaw = (float)Math.atan2(g.normal().x, g.normal().z);
+      m.rotate(com.mojang.math.Axis.YP.rotation(yaw));
+      float sc = (float)(g.w() / 220.0);
+      m.scale(sc, -sc, sc);
+      ctx.text(tr, text, -tr.width(text) / 2.0F, -4.0F, 0xFFF0EAFF, true, m.last().pose(), false, 0, 15728880);
+      m.popPose();
+   }
+
+   private static VertexConsumer context(WorldCtx ctx) {
+      return ctx.buffer(com.lennart.nebula.util.WorldRender.translucentColor());
    }
 
    private void label(WorldCtx ctx, ImageGeometry g, String text) {
