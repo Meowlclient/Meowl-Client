@@ -24,6 +24,8 @@ public final class HudBox {
    public final BooleanSetting background;
    public final ColorSetting backgroundColor;
    public final NumberSetting rounding;
+   /** Nur die Anzeige im HUD an/aus (HUD-Editor) – das Modul selbst läuft weiter. */
+   public final BooleanSetting shown;
    private final NumberSetting anchorX;
    private final NumberSetting anchorY;
    private final NumberSetting offX;
@@ -67,6 +69,8 @@ public final class HudBox {
       this.backgroundColor.setVisibility(this.background::get);
       this.rounding = adder.add(new NumberSetting(name.apply("Ecken-Rundung"), "0 = eckig", 3.0, 0.0, 8.0, 1.0, "px"));
       this.rounding.setVisibility(this.background::get);
+      this.shown = adder.add(new BooleanSetting(name.apply("HUD sichtbar"), "Nur die Anzeige ein-/ausblenden – das Modul bleibt an", true));
+      this.shown.setVisibility(() -> false);
       this.anchorX = adder.add(new NumberSetting(name.apply("HUD-Anker X"), "", LEGACY, LEGACY, 2.0, 1.0, ""));
       this.anchorY = adder.add(new NumberSetting(name.apply("HUD-Anker Y"), "", LEGACY, LEGACY, 2.0, 1.0, ""));
       this.offX = adder.add(new NumberSetting(name.apply("HUD-Abstand X"), "", 0.0, -8000.0, 8000.0, 0.5, "px"));
@@ -146,6 +150,12 @@ public final class HudBox {
       ctx.pose().pushMatrix();
       ctx.pose().translate(px, py);
       ctx.pose().scale(sx, sy);
+      if (this.hiddenNow()) {
+         // im HUD ausgeblendet: nichts sichtbar zeichnen (Modul läuft weiter)
+         ctx.pose().scale(0.0F, 0.0F);
+         return;
+      }
+
       if (drawBackground) {
          this.drawBackground(ctx, w, h);
       }
@@ -180,6 +190,11 @@ public final class HudBox {
       this.remember(px, py, w, h, 1.0F, 1.0F, true);
       ctx.pose().pushMatrix();
       ctx.pose().translate(px, py);
+      if (this.hiddenNow()) {
+         ctx.pose().scale(0.0F, 0.0F);
+         return;
+      }
+
       if (drawBackground) {
          this.drawBackground(ctx, w, h);
       }
@@ -207,6 +222,11 @@ public final class HudBox {
       } else {
          Render2D.roundRect(ctx, 0, 0, w, h, Math.min(r, Math.min(w, h) / 2), this.fade(this.backgroundColor.get()));
       }
+   }
+
+   /** Ausgeblendet und nicht im HUD-Editor (dort sieht man alles, um es wieder einzuschalten). */
+   public boolean hiddenNow() {
+      return !this.shown.get() && !HudLayout.isEditing();
    }
 
    public boolean isVisibleNow() {

@@ -81,6 +81,10 @@ public class ModuleManager {
          com.lennart.nebula.util.Perf.frame();
          for (Module module : this.modules) {
             if (module.isEnabled()) {
+               if (allHidden(module)) {
+                  continue;
+               }
+
                long t0 = com.lennart.nebula.util.Perf.start();
                module.onRenderHud(context, tickDelta);
                com.lennart.nebula.util.Perf.add(module, t0);
@@ -99,6 +103,22 @@ public class ModuleManager {
             }
          }
       }
+   }
+
+   /** Alle HUD-Anzeigen des Moduls ausgeblendet? Dann muss gar nichts gezeichnet werden. */
+   private static boolean allHidden(Module module) {
+      List<com.lennart.nebula.module.hud.HudBox> boxes = module.getHudBoxes();
+      if (boxes.isEmpty()) {
+         return false;
+      }
+
+      for (com.lennart.nebula.module.hud.HudBox b : boxes) {
+         if (!b.hiddenNow()) {
+            return false;
+         }
+      }
+
+      return true;
    }
 
    private void handleKeybinds(Minecraft client) {

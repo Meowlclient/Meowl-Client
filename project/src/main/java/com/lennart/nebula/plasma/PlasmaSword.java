@@ -40,8 +40,8 @@ public final class PlasmaSword {
          matrices.scale(0.85F, 0.85F, 0.85F);
          matrices.translate(0.0F, 0.16F, 0.035F);
          float scale = look.bladeLength() / 0.95F;
-         queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> karambit(entry.pose(), vc, look, scale, false));
-         queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> karambit(entry.pose(), vc, look, scale, true));
+         queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> karambit(entry.pose(), vc, look, scale, false)));
+         queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> karambit(entry.pose(), vc, look, scale, true)));
          matrices.popPose();
          return;
       }
@@ -67,28 +67,28 @@ public final class PlasmaSword {
          if (look.model() == BUTTERFLY) {
             submitButterfly(matrices, queue, look, 180.0F, 152.0F);
          } else if (look.model() == KARAMBIT) {
-            queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> karambit(entry.pose(), vc, look, scale, false));
-            queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> karambit(entry.pose(), vc, look, scale, true));
+            queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> karambit(entry.pose(), vc, look, scale, false)));
+            queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> karambit(entry.pose(), vc, look, scale, true)));
          } else {
-            queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> katana(entry.pose(), vc, look, scale, false));
-            queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> katana(entry.pose(), vc, look, scale, true));
+            queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> katana(entry.pose(), vc, look, scale, false)));
+            queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> katana(entry.pose(), vc, look, scale, true)));
          }
 
          matrices.popPose();
          return;
       }
 
-      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> hilt(entry.pose(), vc, look));
+      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> hilt(entry.pose(), vc, look)));
       float len = look.bladeLength() * look.extend();
       if (len > 0.01F) {
-         queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> blade(entry.pose(), vc, look, len, 1.0F));
+         queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> blade(entry.pose(), vc, look, len, 1.0F)));
          if (look.trail() && look.swing() > 0.05F && look.swing() < 0.95F) {
             for (int k = 1; k <= 3; k++) {
                float back = k * 9.0F * (float)Math.sin(look.swing() * Math.PI);
                matrices.pushPose();
                matrices.rotate(Axis.ZP.rotationDegrees(back));
                float fade = 0.5F / k;
-               queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> blade(entry.pose(), vc, look, len, fade));
+               queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> blade(entry.pose(), vc, look, len, fade)));
                matrices.popPose();
             }
          }
@@ -597,8 +597,8 @@ public final class PlasmaSword {
     */
    public static void submitButterfly(PoseStack matrices, SubmitNodeCollector queue, Look look, float handleA, float handleB) {
       float scale = look.bladeLength() / 0.95F;
-      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> butterfly(entry.pose(), vc, look, scale, handleA, handleB, false));
-      queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> butterfly(entry.pose(), vc, look, scale, handleA, handleB, true));
+      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> butterfly(entry.pose(), vc, look, scale, handleA, handleB, false)));
+      queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> butterfly(entry.pose(), vc, look, scale, handleA, handleB, true)));
    }
 
    private static void butterfly(Matrix4f m, VertexConsumer vc, Look look, float scale, float handleA, float handleB, boolean glow) {
@@ -649,8 +649,8 @@ public final class PlasmaSword {
       }
 
       float scale = look.bladeLength() / 0.95F;
-      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> karambit(entry.pose(), vc, look, scale, false));
-      queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> karambit(entry.pose(), vc, look, scale, true));
+      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> karambit(entry.pose(), vc, look, scale, false)));
+      queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.PlasmaMode.class, (entry, vc) -> karambit(entry.pose(), vc, look, scale, true)));
       matrices.popPose();
    }
 }

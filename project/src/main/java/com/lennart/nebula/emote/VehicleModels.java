@@ -38,7 +38,7 @@ public final class VehicleModels {
       matrices.translate(0.0F, 1.5F, 0.0F);
       matrices.scale(blend, blend, blend);
       matrices.translate(0.0F, -1.5F, 0.0F);
-      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> {
+      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.Emotes.class, (entry, vc) -> {
          PoseStack m = local(entry);
          switch (type) {
             case ROLLER -> scooter(m, vc, wheel, bright);
@@ -48,8 +48,8 @@ public final class VehicleModels {
             default -> {
             }
          }
-      });
-      queue.submitCustomGeometry(matrices, WorldRender.glow(), (entry, vc) -> {
+      }));
+      queue.submitCustomGeometry(matrices, WorldRender.glow(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.Emotes.class, (entry, vc) -> {
          PoseStack m = local(entry);
          switch (type) {
             case ROLLER -> scooterGlow(m, vc, time);
@@ -58,7 +58,7 @@ public final class VehicleModels {
             default -> {
             }
          }
-      });
+      }));
       matrices.popPose();
    }
 

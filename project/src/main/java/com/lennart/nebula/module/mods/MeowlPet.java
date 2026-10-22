@@ -121,12 +121,12 @@ public class MeowlPet extends Module {
 
       float scale = (float)(cfg.size() / 19.0);
       matrices.scale(scale, scale, scale);
-      queue.submitCustomGeometry(matrices, com.lennart.nebula.util.WorldRender.solidColor(), (entry, vc) -> {
+      queue.submitCustomGeometry(matrices, com.lennart.nebula.util.WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.MeowlPet.class, (entry, vc) -> {
          com.mojang.blaze3d.vertex.PoseStack m = new com.mojang.blaze3d.vertex.PoseStack();
          m.last().pose().set(entry.pose());
          m.last().normal().set(entry.normal());
          this.pet.drawPreview(m, vc, cfg);
-      });
+      }));
       matrices.popPose();
    }
 

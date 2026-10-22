@@ -29,6 +29,8 @@ import net.minecraft.network.chat.Component;
 
 public final class UpdateManager {
    private static final long FIRST_CHECK_DELAY_MS = 8000L;
+   /** Liegt diese Datei im Jar, ist der Updater komplett aus (eigene Fassung „ohne Updater“). */
+   public static final boolean NO_UPDATER = UpdateManager.class.getResource("/meowl-no-updater") != null;
    private final Minecraft mc = Minecraft.getInstance();
    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8L)).followRedirects(Redirect.NORMAL).build();
    private final UpdateManager.Settings settings;
@@ -61,7 +63,11 @@ public final class UpdateManager {
       Path jar = mod.<Path>flatMap(m -> m.getOrigin().getPaths().stream().findFirst()).orElse(null);
       boolean realJar = jar != null && Files.isRegularFile(jar) && jar.getFileName().toString().endsWith(".jar");
       this.installer = realJar && this.current != null ? new UpdateInstaller(jar) : null;
-      if (this.installer == null) {
+      if (NO_UPDATER) {
+         // Fassung „ohne Updater“: nie nach Updates suchen, nie fragen, nie etwas laden
+         this.state = UpdateManager.State.DISABLED;
+         this.message = "Diese Version hat keinen Updater – neue Versionen selbst herunterladen";
+      } else if (this.installer == null) {
          this.state = UpdateManager.State.DISABLED;
          this.message = "Nur in der fertigen Mod-JAR verfügbar";
       } else {

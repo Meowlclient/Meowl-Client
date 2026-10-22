@@ -93,24 +93,24 @@ public final class LabelCanvas implements NameCanvas {
    }
 
    private void quad(RenderType layer, float x, float y, float size, int color, int light) {
-      this.queue.submitCustomGeometry(this.matrices, layer, (entry, vc) -> {
+      this.queue.submitCustomGeometry(this.matrices, layer, com.lennart.nebula.util.Perf.timed(com.lennart.nebula.nametag.Nametags.class, (entry, vc) -> {
          vc.addVertex(entry, x, y, 0.0F).setColor(color).setUv(0.0F, 0.0F).setLight(light);
          vc.addVertex(entry, x, y + size, 0.0F).setColor(color).setUv(0.0F, 1.0F).setLight(light);
          vc.addVertex(entry, x + size, y + size, 0.0F).setColor(color).setUv(1.0F, 1.0F).setLight(light);
          vc.addVertex(entry, x + size, y, 0.0F).setColor(color).setUv(1.0F, 0.0F).setLight(light);
-      });
+      }));
    }
 
    @Override
    public void background(float x1, float y1, float x2, float y2, int color) {
       if (color >>> 24 != 0 && x2 > x1) {
          int l = this.light;
-         this.queue.submitCustomGeometry(this.matrices, com.lennart.nebula.util.WorldRender.translucentColor(), (entry, vc) -> {
+         this.queue.submitCustomGeometry(this.matrices, com.lennart.nebula.util.WorldRender.translucentColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.nametag.Nametags.class, (entry, vc) -> {
             vc.addVertex(entry, x1, y1, -0.01F).setColor(color).setLight(l);
             vc.addVertex(entry, x1, y2, -0.01F).setColor(color).setLight(l);
             vc.addVertex(entry, x2, y2, -0.01F).setColor(color).setLight(l);
             vc.addVertex(entry, x2, y1, -0.01F).setColor(color).setLight(l);
-         });
+         }));
       }
    }
 }

@@ -246,12 +246,12 @@ public class Watches extends Module {
             boolean slim = player.getSkin().model() == PlayerModelType.SLIM;
             matrices.pushPose();
             armPart.translateAndRotate(matrices);
-            queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> {
+            queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.Watches.class, (entry, vc) -> {
                PoseStack local = new PoseStack();
                local.last().pose().set(entry.pose());
                local.last().normal().set(entry.normal());
                this.drawWatch(local, vc, rightArm, slim, 1.0F);
-            });
+            }));
             matrices.popPose();
          }
       }
