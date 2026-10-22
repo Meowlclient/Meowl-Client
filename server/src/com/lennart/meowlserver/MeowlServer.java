@@ -40,13 +40,14 @@ import java.util.logging.Logger;
 
 public final class MeowlServer {
    private static final Logger LOG = Logger.getLogger("MeowlServer");
-   public static final String VERSION = "1.22.0";
+   public static final String VERSION = "1.23.0";
    private static final int MAX_JSON = 16384;
    private final AuthService auth;
    private final EventHub events = new EventHub();
    private final ImageStore images;
    private final UpdateStore updates;
    private final StreamStore streams = new StreamStore();
+   private final com.lennart.meowlserver.votes.VoteStore votes;
    private final CamRelay cams = new CamRelay((sender, server, on) -> this.broadcastToServer(server, "cam_state", Map.of("uuid", sender.toString(), "on", on)));
    private final DuelService duels;
    private final ClapService claps;
@@ -94,6 +95,7 @@ public final class MeowlServer {
       this.paint = new PaintStore(dataDir);
       this.chatImages = new PaintStore(dataDir, "chatimg", 2560, true, 2000);
       this.chat = new ChatService(dataDir, this.friends, this.events);
+      this.votes = new com.lennart.meowlserver.votes.VoteStore(dataDir);
    }
 
    public static void main(String[] args) throws IOException {
@@ -319,6 +321,21 @@ public final class MeowlServer {
                sendJson(ex, 200, Map.of("events", list, "latest", latest));
                break;
             }
+            case "GET /votes":
+               // Kosmetik-Abstimmung: Zählung, eigene Stimmen, neueste Wünsche
+               this.limiter.check(user, "votes.get", 10.0, 1.0);
+               sendJson(ex, 200, this.votes.results(me.uuid()));
+               break;
+            case "POST /votes":
+               this.limiter.check(user, "votes.vote", 60.0, 6.0);
+               this.votes.vote(me.uuid(), jsonBody(ex));
+               sendJson(ex, 200, Map.of("ok", true));
+               break;
+            case "POST /votes/wish":
+               this.limiter.check(user, "votes.wish", 5.0, 0.05);
+               this.votes.wish(me.uuid(), me.name(), jsonBody(ex));
+               sendJson(ex, 200, Map.of("ok", true));
+               break;
             case "GET /images": {
                this.limiter.check(user, "images.list", 5.0, 0.5);
                List<Object> list = new ArrayList<>();
