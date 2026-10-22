@@ -282,7 +282,7 @@ public class HudEditorScreen extends Screen {
       y += 12;
 
       for (HudEditorScreen.Element e : this.elements) {
-         boolean on = e.module().isEnabled();
+         boolean on = e.module().isEnabled() && e.box().shown.get();
          boolean hov = Render2D.inside(mouseX, mouseY, x - 2, y - 1, w + 4, 11);
          if (hov || e == this.selected) {
             Render2D.roundRect(ctx, x - 2, y - 1, w + 4, 11, 3, e == this.selected ? 1619746038 : 822083583);
@@ -291,7 +291,14 @@ public class HudEditorScreen extends Screen {
          Render2D.circle(ctx, x + 4, y + 4, 3, on ? -11870592 : -11841432);
          ctx.drawString(this.font, e.label(), x + 12, y + 1, on ? -1578509 : -7564628, false);
          this.buttons.add(new HudEditorScreen.Button(x - 2, y - 1, w + 4, 11, () -> {
-            e.module().toggle();
+            // nur die Anzeige im HUD umschalten – das Modul selbst bleibt an (ist es aus, wird es eingeschaltet)
+            if (!e.module().isEnabled()) {
+               e.module().setEnabled(true);
+               e.box().shown.set(true);
+            } else {
+               e.box().shown.set(!e.box().shown.get());
+            }
+
             this.selected = e;
             this.config.save();
          }));

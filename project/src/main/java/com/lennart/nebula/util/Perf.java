@@ -45,6 +45,34 @@ public final class Perf {
       a[0] += d;
    }
 
+   private static final Map<Class<?>, Object> MODULES = new HashMap<>();
+
+   /** Modul-Instanz als Messschlüssel (gecacht). */
+   public static Object module(Class<? extends com.lennart.nebula.module.Module> type) {
+      Object m = MODULES.get(type);
+      if (m == null) {
+         m = com.lennart.nebula.NebulaClient.getInstance().getModuleManager().get(type);
+         if (m == null) {
+            return type;
+         }
+
+         MODULES.put(type, m);
+      }
+
+      return m;
+   }
+
+   /** Verzögert gezeichnete Geometrie messen: die Zeit beim eigentlichen Zeichnen wird {@code owner} gutgeschrieben. */
+   public static net.minecraft.client.renderer.SubmitNodeCollector.CustomGeometryRenderer timed(
+      Class<? extends com.lennart.nebula.module.Module> owner, net.minecraft.client.renderer.SubmitNodeCollector.CustomGeometryRenderer r
+   ) {
+      return (pose, vc) -> {
+         long t0 = System.nanoTime();
+         r.render(pose, vc);
+         add(module(owner), t0);
+      };
+   }
+
    /** Einmal pro gezeichnetem Bild (in der Welt). */
    public static void frame() {
       frames++;
@@ -79,7 +107,10 @@ public final class Perf {
             Map<Long, Long> seen = new HashMap<>();
             for (Thread t : Thread.getAllStackTraces().keySet()) {
                String name = t.getName();
-               if (!name.startsWith("Meowl")) {
+               // eigene Threads und die HTTP-Arbeiter (Netzwerk des Clients: Meowl Server, Bilder, Streaming …)
+               if (name.startsWith("HttpClient")) {
+                  name = "Netzwerk (HTTP)";
+               } else if (!name.startsWith("Meowl")) {
                   continue;
                }
 
@@ -137,6 +168,16 @@ public final class Perf {
 
    public static int fps() {
       return fps;
+   }
+
+   /** Wie viele FPS etwas kostet, das {@code ms} pro Bild braucht (ohne es wäre die Bildzeit um ms kürzer). */
+   public static double fpsCost(double ms) {
+      double f = frameMs;
+      if (f <= 0.0 || ms <= 0.0) {
+         return 0.0;
+      }
+
+      return 1000.0 / Math.max(0.2, f - ms) - 1000.0 / f;
    }
 
    /** Für Listen: Einträge nach Kosten sortiert. */

@@ -483,12 +483,12 @@ public final class DuelManager {
          boolean flash = w.muzzleFlash();
          float light = m.mc.level == null ? 1.0F : 0.55F + 0.45F * m.mc.level.getMaxLocalRawBrightness(m.mc.player.blockPosition()) / 15.0F;
          float spinFinal = spin;
-         queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> {
+         queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.SheriffDuel.class, (entry, vc) -> {
             PoseStack local = new PoseStack();
             local.last().pose().set(entry.pose());
             local.last().normal().set(entry.normal());
             SheriffModel.draw(local, vc, light, spinFinal, flash);
-         });
+         }));
          matrices.popPose();
       }
    }

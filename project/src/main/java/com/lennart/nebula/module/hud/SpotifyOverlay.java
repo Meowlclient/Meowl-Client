@@ -69,7 +69,18 @@ public class SpotifyOverlay extends Module {
    private final com.lennart.nebula.setting.ModeSetting lyricStyle = this.add(
       new com.lennart.nebula.setting.ModeSetting("Lyrics-Stil", "Im HUD oder Wort für Wort in der Welt aufploppend", "HUD", "HUD", "In der Welt")
    );
-   private final NumberSetting lyricWorldSize = this.add(new NumberSetting("Welt-Größe", "Größe der Lyrics in der Welt", 1.2, 0.5, 3.0, 0.1, "x"));
+   private final NumberSetting lyricWorldSize = this.add(new NumberSetting("Welt-Größe", "Größe der Lyrics in der Welt", 1.2, 0.3, 6.0, 0.1, "x"));
+   private final NumberSetting lyricWorldDist = this.add(new NumberSetting("Welt-Abstand", "Wie weit die Zeilen von dir weg erscheinen", 8.0, 2.0, 32.0, 0.5, "Blöcke"));
+   private final NumberSetting lyricWorldHeight = this.add(new NumberSetting("Welt-Höhe", "Wie weit über (+) oder unter (−) deinem Blick die Zeilen erscheinen", 14.0, -30.0, 40.0, 1.0, "°"));
+   private final NumberSetting lyricWorldSpread = this.add(new NumberSetting("Welt-Streuung", "Wie weit die Zeilen seitlich verteilt erscheinen", 50.0, 0.0, 120.0, 5.0, "°"));
+   private final NumberSetting lyricWorldTilt = this.add(new NumberSetting("Welt-Neigung", "Wie schräg die Zeilen stehen dürfen", 12.0, 0.0, 40.0, 1.0, "°"));
+   private final com.lennart.nebula.setting.ModeSetting lyricWorldFx = this.add(
+      new com.lennart.nebula.setting.ModeSetting("Welt-Effekt", "Sternschnuppe fliegt zur nächsten Zeile, Sternenstaub funkelt um die Zeile", "Beides", "Beides", "Sternschnuppe", "Sternenstaub", "Keine")
+   );
+   private final com.lennart.nebula.setting.ModeSetting lyricWorldMotion = this.add(
+      new com.lennart.nebula.setting.ModeSetting("Welt-Bewegung", "Wie sich die Zeilen bewegen", "Schweben", "Schweben", "Welle", "Ruhig")
+   );
+   private final NumberSetting lyricFxStrength = this.add(new NumberSetting("Effekt-Stärke", "Helligkeit und Menge der Effekte", 100.0, 10.0, 200.0, 10.0, "%"));
    private final ColorSetting worldColorA = this.add(new ColorSetting("Welt-Farbe 1", "Farbe am Wortanfang (Lyrics in der Welt)", 0xFFF4EEFF, false));
    private final ColorSetting worldColorB = this.add(new ColorSetting("Welt-Farbe 2", "Farbe am Wortende (Lyrics in der Welt)", 0xFFB98CFF, false));
    private final NumberSetting lyricOffset = this.add(new NumberSetting("Lyrics-Verschiebung", "Text früher (-) oder später (+), falls er nicht passt", 0.0, -3000.0, 3000.0, 100.0, "ms"));
@@ -466,6 +477,10 @@ public class SpotifyOverlay extends Module {
 
    private WorldLine worldLine;
    private WorldLine worldFading;
+   /** Sternschnuppe von der alten zur neuen Zeile: Start, Ziel, Startzeit. */
+   private net.minecraft.world.phys.Vec3 starFrom;
+   private net.minecraft.world.phys.Vec3 starTo;
+   private long starAt;
    private long worldFadeAt;
    private final java.util.Random worldRandom = new java.util.Random();
 
@@ -527,7 +542,18 @@ public class SpotifyOverlay extends Module {
          }
 
          String text = current >= 0 ? lines.get(current).text().trim() : "";
+         WorldLine before = this.worldLine;
          this.worldLine = text.isEmpty() ? null : this.layoutWorldLine(l, lines, current, text, tickDelta, now);
+         if (this.worldLine != null && this.worldLine.pos() != null) {
+            // Sternschnuppe: von der alten Zeile (oder von schräg oben) zur neuen
+            net.minecraft.world.phys.Vec3 to = this.worldLine.pos();
+            net.minecraft.world.phys.Vec3 eye = this.mc.player.getEyePosition(tickDelta);
+            this.starFrom = before != null && before.pos() != null
+               ? before.pos()
+               : to.add(to.subtract(eye).cross(new net.minecraft.world.phys.Vec3(0.0, 1.0, 0.0)).normalize().scale(-5.0)).add(0.0, 3.5, 0.0);
+            this.starTo = to;
+            this.starAt = now;
+         }
       }
 
       if (this.worldFading != null) {
@@ -541,6 +567,100 @@ public class SpotifyOverlay extends Module {
       if (this.worldLine != null) {
          this.drawWorldLine(context, this.worldLine, now, pos, -1.0F);
       }
+
+      this.drawWorldFx(context, now, pos);
+   }
+
+   // ================================================================== Effekte
+
+   private static float hash(int i, int k) {
+      double v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
+      return (float)(v - Math.floor(v));
+   }
+
+   /** Sternschnuppe zur neuen Zeile, Funkenregen beim Ankommen und Sternenstaub um die aktuelle Zeile. */
+   private void drawWorldFx(com.lennart.nebula.util.WorldCtx ctx, long now, long songPos) {
+      String fx = this.lyricWorldFx.get();
+      if (fx.equals("Keine")) {
+         return;
+      }
+
+      float k = (float)(this.lyricFxStrength.get() / 100.0);
+      float size = (float)this.lyricWorldSize.get().doubleValue();
+      int colB = this.worldColorB.get() & 0xFFFFFF;
+      int colA = this.worldColorA.get() & 0xFFFFFF;
+      net.minecraft.world.phys.Vec3 cam = ctx.cameraPos();
+      com.mojang.blaze3d.vertex.PoseStack m = ctx.matrices();
+      com.mojang.blaze3d.vertex.VertexConsumer vc = ctx.buffer(com.lennart.nebula.util.WorldRender.glow());
+      m.pushPose();
+      m.translate(-cam.x, -cam.y, -cam.z);
+      if ((fx.equals("Beides") || fx.equals("Sternschnuppe")) && this.starFrom != null && this.starTo != null) {
+         float age = (now - this.starAt) / 1000.0F;
+         float fly = 0.75F;
+         net.minecraft.world.phys.Vec3 a = this.starFrom, b = this.starTo;
+         net.minecraft.world.phys.Vec3 c = a.add(b).scale(0.5).add(0.0, Math.max(1.5, a.distanceTo(b) * 0.35), 0.0);
+         if (age < fly) {
+            float u = age / fly;
+            u = u * u * (3.0F - 2.0F * u);
+            // Schweif: Punkte hinter dem Kopf, kleiner und blasser
+            for (int i = 0; i < 18; i++) {
+               float q = u - i * 0.03F;
+               if (q < 0.0F) {
+                  break;
+               }
+
+               net.minecraft.world.phys.Vec3 p = bezier(a, c, b, q);
+               float fade = 1.0F - i / 18.0F;
+               float r = (0.05F + 0.07F * fade) * Math.min(1.6F, size);
+               com.lennart.nebula.cosmetic.Shapes.glowCube(m, vc, (float)p.x, (float)p.y, (float)p.z, r, i < 3 ? 0xFFFFFF : lerpRgb(colA, colB, i / 18.0F), 0.75F * fade * k);
+            }
+
+            net.minecraft.world.phys.Vec3 head = bezier(a, c, b, u);
+            com.lennart.nebula.cosmetic.Shapes.glowCube(m, vc, (float)head.x, (float)head.y, (float)head.z, 0.22F * Math.min(1.6F, size), colB, 0.35F * k);
+         } else if (age < fly + 0.8F) {
+            // Ankunft: Funken fliegen auseinander
+            float t = (age - fly) / 0.8F;
+            float alpha = (1.0F - t) * (1.0F - t) * k;
+            for (int i = 0; i < 14; i++) {
+               double th = hash(i, 1) * Math.PI * 2.0, ph = (hash(i, 2) - 0.5) * Math.PI;
+               double d = (0.3 + hash(i, 3) * 0.9) * t * Math.min(2.0F, size);
+               net.minecraft.world.phys.Vec3 p = b.add(Math.cos(th) * Math.cos(ph) * d, Math.sin(ph) * d - t * t * 0.3, Math.sin(th) * Math.cos(ph) * d);
+               com.lennart.nebula.cosmetic.Shapes.glowCube(m, vc, (float)p.x, (float)p.y, (float)p.z, 0.045F * Math.min(1.6F, size), i % 3 == 0 ? 0xFFFFFF : colB, 0.8F * alpha);
+            }
+         }
+      }
+
+      if ((fx.equals("Beides") || fx.equals("Sternenstaub")) && this.worldLine != null && this.worldLine.pos() != null) {
+         // Sternenstaub: funkelnde Punkte in der Bildebene um die Zeile, steigen langsam auf
+         org.joml.Quaternionf q = ctx.cameraOrientation();
+         org.joml.Vector3f right = q.transform(new org.joml.Vector3f(1.0F, 0.0F, 0.0F));
+         org.joml.Vector3f up = q.transform(new org.joml.Vector3f(0.0F, 1.0F, 0.0F));
+         WorldLine line = this.worldLine;
+         float half = 0.0F;
+         for (int i = 0; i < line.words().length; i++) {
+            half = Math.max(half, Math.abs(line.wx()[i]) + line.ww()[i]);
+         }
+
+         half = half * 0.028F * size + 0.6F;
+         float t = (now - line.born()) / 1000.0F;
+         int seed = line.index() * 31;
+         int count = Math.round(16 * Math.min(2.0F, k));
+         for (int i = 0; i < count; i++) {
+            float x = (hash(seed + i, 4) * 2.0F - 1.0F) * half;
+            float y = ((hash(seed + i, 5) * 2.0F - 1.0F) * 0.7F + (t * 0.12F + hash(seed + i, 6)) % 1.0F * 0.5F) * size;
+            float tw = Math.max(0.0F, (float)Math.sin(t * (2.0F + hash(seed + i, 7) * 3.0F) + i * 1.7F));
+            float appear = Math.min(1.0F, t / 0.5F);
+            net.minecraft.world.phys.Vec3 p = line.pos().add(right.x * x + up.x * y, right.y * x + up.y * y, right.z * x + up.z * y);
+            com.lennart.nebula.cosmetic.Shapes.glowCube(m, vc, (float)p.x, (float)p.y, (float)p.z, 0.035F * Math.min(1.6F, size), i % 4 == 0 ? 0xFFFFFF : colB, 0.7F * tw * tw * appear * k);
+         }
+      }
+
+      m.popPose();
+   }
+
+   private static net.minecraft.world.phys.Vec3 bezier(net.minecraft.world.phys.Vec3 a, net.minecraft.world.phys.Vec3 c, net.minecraft.world.phys.Vec3 b, float t) {
+      double u = 1.0 - t;
+      return a.scale(u * u).add(c.scale(2.0 * u * t)).add(b.scale((double)t * t));
    }
 
    /** Layout einer Zeile: Wörter in höchstens zwei versetzte Reihen (wie im Video), Abstand einstellbar. */
@@ -599,7 +719,8 @@ public class SpotifyOverlay extends Module {
       double width = maxRow * 0.028 * this.lyricWorldSize.get();
       net.minecraft.world.phys.Vec3 at = this.freeSpot(tickDelta, width);
       long[] appear = this.wordTimes(lines, index, words);
-      return new WorldLine(index, l, at, (this.worldRandom.nextFloat() - 0.5F) * 12.0F, words, appear, now, wx, wy, ww, chars, charW);
+      float tilt = (this.worldRandom.nextFloat() - 0.5F) * 2.0F * (float)this.lyricWorldTilt.get().doubleValue();
+      return new WorldLine(index, l, at, tilt, words, appear, now, wx, wy, ww, chars, charW);
    }
 
    /** Sucht eine freie Stelle im Blickfeld; die Zeile (Breite {@code width}) darf keinen Block berühren. */
@@ -609,12 +730,14 @@ public class SpotifyOverlay extends Module {
       double bestDist = -1.0;
       for (int attempt = 0; attempt < 10; attempt++) {
          float spread = attempt < 6 ? 1.0F : 0.4F;
-         float yaw = this.mc.player.getYRot() + (this.worldRandom.nextFloat() - 0.5F) * 50.0F * spread;
-         float pitch = Math.max(-60.0F, Math.min(30.0F, this.mc.player.getXRot() - (6.0F + this.worldRandom.nextFloat() * 16.0F) * spread));
+         float yaw = this.mc.player.getYRot() + (this.worldRandom.nextFloat() - 0.5F) * (float)this.lyricWorldSpread.get().doubleValue() * spread;
+         float height = (float)this.lyricWorldHeight.get().doubleValue();
+         float pitch = Math.max(-75.0F, Math.min(75.0F, this.mc.player.getXRot() - (height + (this.worldRandom.nextFloat() - 0.5F) * 12.0F) * spread));
          net.minecraft.world.phys.Vec3 dir = net.minecraft.world.phys.Vec3.directionFromRotation(pitch, yaw);
          net.minecraft.world.phys.Vec3 side = dir.cross(new net.minecraft.world.phys.Vec3(0.0, 1.0, 0.0));
          side = side.lengthSqr() < 1.0E-4 ? new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0) : side.normalize();
-         double want = 7.0 + this.worldRandom.nextDouble() * 3.0;
+         double base = this.lyricWorldDist.get();
+         double want = base * (0.88 + this.worldRandom.nextDouble() * 0.24);
          // Mitte, beide Enden und Ober-/Unterkante der Zeile prüfen
          double free = want;
          for (int k = -1; k <= 1; k++) {
@@ -654,7 +777,9 @@ public class SpotifyOverlay extends Module {
    private void drawWorldLine(com.lennart.nebula.util.WorldCtx ctx, WorldLine line, long now, long songPos, float fadeOut) {
       Font tr = this.mc.font;
       net.minecraft.world.phys.Vec3 cam = ctx.cameraPos();
-      float drift = (now - line.born()) / 1000.0F * 0.05F;
+      String motion = this.lyricWorldMotion.get();
+      float lt = (now - line.born()) / 1000.0F;
+      float drift = motion.equals("Ruhig") ? 0.0F : lt * 0.05F + (motion.equals("Schweben") ? (float)Math.sin(lt * 1.3F) * 0.06F : 0.0F);
       com.mojang.blaze3d.vertex.PoseStack m = ctx.matrices();
       m.pushPose();
       m.translate(line.pos().x - cam.x, line.pos().y - cam.y + drift, line.pos().z - cam.z);
@@ -689,6 +814,10 @@ public class SpotifyOverlay extends Module {
          }
 
          int ww = line.ww()[i];
+         if (motion.equals("Welle")) {
+            rise += (float)Math.sin(lt * 2.6F - i * 0.7F) * 2.2F;
+         }
+
          m.pushPose();
          m.translate(line.wx()[i] + ww / 2.0F, line.wy()[i] + rise, 0.0F);
          m.scale(scale, scale, scale);

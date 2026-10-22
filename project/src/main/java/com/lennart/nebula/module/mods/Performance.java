@@ -33,6 +33,10 @@ public class Performance extends Module {
       new NumberSetting("Kosmetik-Sichtweite", "Kosmetik anderer Spieler nur bis zu dieser Entfernung zeichnen", 64.0, 8.0, 128.0, 8.0, "Blöcke")
    );
    private final BooleanSetting cosmeticParticles = this.add(new BooleanSetting("Kosmetik-Partikel", "Partikel von Kosmetik (Auren, Hände …)", true));
+   private final BooleanSetting overlay = this.add(new BooleanSetting("Overlay im Spiel", "Kleine Anzeige im HUD: FPS und was wie viele FPS kostet", false));
+   private final NumberSetting overlayRows = this.add(new NumberSetting("Overlay-Zeilen", "Wie viele Einträge das Overlay zeigt", 8.0, 3.0, 40.0, 1.0, ""));
+   private final BooleanSetting overlayAll = this.add(new BooleanSetting("Alle Module", "Auch Module ohne messbare Kosten im Overlay zeigen", false));
+   private final com.lennart.nebula.module.hud.HudBox box = this.hudBox("Leistung", 1.0, 30.0);
    /** Was „Alles sauber machen“ abgeschaltet hat (zum Zurückholen). */
    private final List<Module> cleanedModules = new ArrayList<>();
    private final List<Cosmetic> cleanedOthers = new ArrayList<>();
@@ -83,6 +87,71 @@ public class Performance extends Module {
    public static boolean cosmeticParticles() {
       Performance p = instance;
       return p == null || p.cosmeticParticles.get();
+   }
+
+   public BooleanSetting overlaySetting() {
+      return this.overlay;
+   }
+
+   @Override
+   public void onRenderHud(net.minecraft.client.gui.GuiGraphics ctx, float tickDelta) {
+      boolean editing = com.lennart.nebula.module.hud.HudLayout.isEditing();
+      if (!this.overlay.get() && !editing) {
+         return;
+      }
+
+      net.minecraft.client.gui.Font font = this.mc.font;
+      Map<Object, Double> cost = Perf.msPerFrame();
+      List<Object[]> rows = new ArrayList<>();
+      double total = 0.0;
+      for (Map.Entry<Object, Double> e : cost.entrySet()) {
+         total += e.getValue();
+      }
+
+      for (Module m : NebulaClient.getInstance().getModuleManager().getModules()) {
+         if (m.isHidden() || !m.isEnabled() && !(m instanceof Cosmetic)) {
+            continue;
+         }
+
+         double ms = cost.getOrDefault(m, 0.0);
+         if (m instanceof Cosmetic c) {
+            double others = cost.getOrDefault(c.othersKey(), 0.0);
+            ms += others;
+            if (!m.isEnabled() && others <= 0.0) {
+               continue;
+            }
+         }
+
+         if (ms >= 0.003 || this.overlayAll.get()) {
+            rows.add(new Object[]{m.getName(), ms});
+         }
+      }
+
+      for (Map.Entry<String, Double> e : Perf.background().entrySet()) {
+         if (e.getValue() >= 0.5) {
+            rows.add(new Object[]{e.getKey().replace("Meowl-", "") + " (Hintergrund)", -e.getValue()});
+         }
+      }
+
+      rows.sort((a, b) -> Double.compare(Math.abs((Double)b[1]) * ((Double)b[1] < 0 ? 0.02 : 1.0), Math.abs((Double)a[1]) * ((Double)a[1] < 0 ? 0.02 : 1.0)));
+      int n = Math.min(rows.size(), this.overlayRows.getInt());
+      int w = 150;
+      int h = 26 + n * 10;
+      this.box.begin(ctx, w, h);
+      ctx.drawString(font, "§l" + Perf.fps() + " FPS §7" + String.format("%.1f ms", Perf.frameMs()), 4, 4, 0xFFFFFFFF, true);
+      ctx.drawString(font, "Meowl: −" + String.format("%.0f", Perf.fpsCost(total)) + " FPS", 4, 14, 0xFFB98CFF, true);
+      for (int i = 0; i < n; i++) {
+         String name = (String)rows.get(i)[0];
+         double v = (Double)rows.get(i)[1];
+         String val = v < 0.0 ? String.format("%.1f%% CPU", -v) : String.format("−%.1f FPS", Perf.fpsCost(v));
+         double fc = v < 0.0 ? 0.0 : Perf.fpsCost(v);
+         int col = fc > 10.0 ? 0xFFFF7070 : (fc > 2.0 ? 0xFFFFC857 : 0xFFBFC4D0);
+         int y = 26 + i * 10;
+         ctx.drawString(font, font.plainSubstrByWidth(name, w - 8 - font.width(val) - 4), 4, y, 0xFFE0E0E8, false);
+         ctx.drawString(font, val, w - 4 - font.width(val), y, col, false);
+      }
+
+      this.box.end(ctx);
    }
 
    public ModeSetting backgroundFpsSetting() {

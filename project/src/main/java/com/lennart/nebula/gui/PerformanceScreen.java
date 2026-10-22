@@ -104,6 +104,15 @@ public class PerformanceScreen extends Screen {
       }
 
       keys.addAll(this.touched);
+      // wirklich alle Module, auch die ohne messbare Kosten oder ausgeschaltete
+      for (Module m : NebulaClient.getInstance().getModuleManager().getModules()) {
+         if (!m.isHidden()) {
+            keys.add(m);
+            if (m instanceof Cosmetic c) {
+               keys.add(c.othersKey());
+            }
+         }
+      }
       for (Object k : keys) {
          double ms = cost.getOrDefault(k, 0.0);
          if (k instanceof Cosmetic.Others o) {
@@ -163,16 +172,20 @@ public class PerformanceScreen extends Screen {
       boolean inWorld = this.minecraft.level != null;
       String head = !inWorld
          ? "Messung läuft nur in einer Welt"
-         : Perf.fps() + " FPS · " + String.format("%.1f", frame) + " ms pro Bild · Meowl: " + String.format("%.2f", client) + " ms ("
+         : Perf.fps() + " FPS · " + String.format("%.1f", frame) + " ms · Meowl kostet −" + String.format("%.0f", Perf.fpsCost(client)) + " FPS ("
             + Math.round(frame > 0.0 ? client / frame * 100.0 : 0.0) + " %)";
       ctx.drawString(this.font, head, px + 70, py + 8, Theme.TEXT_DIM, false);
       // Knöpfe und Optionen
       int by = py + 24;
       int bw = (pw - 30) / 2;
-      this.button(ctx, px + 10, by, bw, "Alles sauber machen", true, mouseX, mouseY, () -> this.perf.clean());
+      int tw = (pw - 40) / 3;
+      this.button(ctx, px + 10, by, tw, "Alles sauber machen", true, mouseX, mouseY, () -> this.perf.clean());
       if (this.perf.hasCleaned()) {
-         this.button(ctx, px + 20 + bw, by, bw, "Rückgängig", false, mouseX, mouseY, this.perf::restore);
+         this.button(ctx, px + 20 + tw, by, tw, "Rückgängig", false, mouseX, mouseY, this.perf::restore);
       }
+
+      var overlay = this.perf.overlaySetting();
+      this.button(ctx, px + 30 + tw * 2, by, tw, "Overlay im Spiel: " + (overlay.get() ? "an" : "aus"), false, mouseX, mouseY, () -> overlay.set(!overlay.get()));
 
       by += 20;
       int ow = (pw - 40) / 3;
@@ -224,10 +237,12 @@ public class PerformanceScreen extends Screen {
          int barCol = share > 0.08 ? 0x70FF5F5F : (share > 0.02 ? 0x70FFC857 : 0x705BE38A);
          ctx.fill(x0 + 2, y + rowH - 5, x0 + 2 + barW, y + rowH - 3, barCol);
          int textCol = r.on ? 0xFFFFFFFF : 0xFF8A8AA0;
-         ctx.drawString(this.font, this.font.plainSubstrByWidth(r.name, w0 - 170), x0 + 6, y + 4, textCol, false);
-         ctx.drawString(this.font, r.kind, x0 + w0 - 160, y + 4, Theme.TEXT_MUTED, false);
-         String val = r.cpu > 0.0 ? String.format("%.1f %% CPU", r.cpu) : String.format("%.2f ms · %d %%", r.ms, Math.round(share * 100.0));
-         ctx.drawString(this.font, val, x0 + w0 - 96, y + 4, share > 0.08 ? 0xFFFF8080 : Theme.TEXT_DIM, false);
+         ctx.drawString(this.font, this.font.plainSubstrByWidth(r.name, w0 - 230), x0 + 6, y + 4, textCol, false);
+         ctx.drawString(this.font, r.kind, x0 + w0 - 222, y + 4, Theme.TEXT_MUTED, false);
+         String val = r.cpu > 0.0
+            ? String.format("%.1f %% CPU", r.cpu)
+            : (!r.on && r.ms <= 0.0 ? "aus" : String.format("−%.1f FPS · %.2f ms", Perf.fpsCost(r.ms), r.ms));
+         ctx.drawString(this.font, val, x0 + w0 - 30 - this.font.width(val), y + 4, share > 0.08 ? 0xFFFF8080 : Theme.TEXT_DIM, false);
          if (r.toggle != null) {
             int sx = x0 + w0 - 24;
             Render2D.roundRect(ctx, sx, y + 3, 20, 10, 5, r.on ? Theme.ACCENT : Theme.SWITCH_OFF);

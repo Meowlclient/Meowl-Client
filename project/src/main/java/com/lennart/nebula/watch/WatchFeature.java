@@ -62,12 +62,12 @@ public class WatchFeature extends RenderLayer<AvatarRenderState, PlayerModel> {
       ModelPart part = right ? this.getParentModel().rightArm : this.getParentModel().leftArm;
       matrices.pushPose();
       part.translateAndRotate(matrices);
-      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), (entry, vc) -> {
+      queue.submitCustomGeometry(matrices, WorldRender.solidColor(), com.lennart.nebula.util.Perf.timed(com.lennart.nebula.module.mods.Watches.class, (entry, vc) -> {
          PoseStack local = new PoseStack();
          local.last().pose().set(entry.pose());
          local.last().normal().set(entry.normal());
          draw.accept(local, vc);
-      });
+      }));
       matrices.popPose();
    }
 }

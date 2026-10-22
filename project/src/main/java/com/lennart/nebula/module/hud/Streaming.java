@@ -412,11 +412,13 @@ public class Streaming extends Module {
          this.refresh();
       }
 
+      // ohne Bildschirme gibt es nichts zu tun (kein Blick-Strahl, keine Wiedergabe)
+      this.lookedAtCached = !this.walls.isEmpty() && this.mc.player != null && this.mc.level != null ? this.lookedAt() : null;
       double[] dist = new double[1];
-      Streaming.Wall near = this.nearest(dist);
+      Streaming.Wall near = this.walls.isEmpty() ? null : this.nearest(dist);
       // der Bildschirm, den man anschaut, hat Vorrang vor dem nächstgelegenen
       if (this.mc.player != null && this.mc.level != null) {
-         Streaming.Wall seen = this.lookedAt();
+         Streaming.Wall seen = this.lookedAtCached;
          if (seen != null && seen != near && (this.showOthers.get() || this.myId().equals(seen.creator()))) {
             double d = this.mc.player.position().distanceTo(geometry(seen.pos(), seen.facing(), seen.w()).center());
             if (d < 48.0) {
@@ -426,7 +428,6 @@ public class Streaming extends Module {
          }
       }
 
-      this.lookedAtCached = this.mc.player != null && this.mc.level != null ? this.lookedAt() : null;
       String id = near == null ? null : near.id();
       if (id == null ? this.activeId != null : !id.equals(this.activeId)) {
          this.activeId = id;
