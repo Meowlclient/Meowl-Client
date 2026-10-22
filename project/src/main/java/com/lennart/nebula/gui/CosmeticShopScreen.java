@@ -60,6 +60,8 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
    private int[] panelBox = new int[4];
    private int[] gridBox = new int[4];
    private float panelAnim;
+   /** Abstimmung, welche Kosmetik bleiben soll – kommt beim Betreten, bis man einmal durch ist. */
+   private final CosmeticVote vote;
 
    private record Hit(int x, int y, int w, int h, Runnable left, Runnable right) {
    }
@@ -68,6 +70,7 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
       super(Component.literal("Kosmetik-Planet"));
       this.parent = parent;
       this.categories = ShopCatalog.build(NebulaClient.getInstance().getModuleManager());
+      this.vote = new CosmeticVote(this.categories);
       Random r = new Random(17L);
       this.stars = new float[160][];
 
@@ -139,9 +142,11 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
       Render2D.roundRect(ctx, w - bw - 8, top, bw, 18, 9, 0xC02A1F4A);
       Render2D.roundRect(ctx, w - bw - 7, top + 1, bw - 2, 16, 8, 0xE0181230);
       ctx.text(this.font, bal, w - bw, top + 5, 0xFFFFD36A, false);
+      // Abstimmung jederzeit wieder öffnen
+      this.pill(ctx, w - bw - 8 - 92, top, "🗳 Abstimmung", mouseX, mouseY, this.vote::show);
       String test = "Testphase: alles freigeschaltet";
-      if (w > 420) {
-         ctx.text(this.font, test, w - bw - 14 - this.font.width(test), top + 5, 0xFF7CE3B0, false);
+      if (w > 560) {
+         ctx.text(this.font, test, w - bw - 14 - 92 - this.font.width(test), top + 5, 0xFF7CE3B0, false);
       }
 
       // Kategorien links
@@ -197,8 +202,15 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
 
       String hint = this.detail == null ? "Klick: ausrüsten & Details  ·  Kaufen kommt später" : "Regler rechts ändern dein Ausgerüstetes sofort";
       ctx.text(this.font, hint, (w - this.font.width(hint)) / 2, h - 12, 0xFF6E6890, false);
-      if (this.tooltip != null) {
+      if (this.tooltip != null && !this.vote.isOpen()) {
          ctx.setTooltipForNextFrame(this.font, Component.literal(this.tooltip), mouseX, mouseY);
+      }
+
+      if (this.vote.isOpen()) {
+         // eigene Ebene: die Vorschauen der Karten dahinter dürfen nicht durchscheinen
+         ctx.nextStratum();
+         LocalPlayer player = this.minecraft.player;
+         this.vote.render(ctx, this.font, w, h, mouseX, mouseY, t, (c, it, x, y, pw, ph, tt) -> this.preview(c, it, player, x, y, pw, ph, tt, true));
       }
    }
 
@@ -784,6 +796,10 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
 
    @Override
    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+      if (this.vote.isOpen()) {
+         return this.vote.mouseClicked(click.x(), click.y(), click.button());
+      }
+
       // erst die Regler in der Leiste
       if (this.inPanel(click.x(), click.y())) {
          for (SettingComponent<?> c : this.components) {
@@ -831,6 +847,10 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
 
    @Override
    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+      if (this.vote.isOpen()) {
+         return true;
+      }
+
       if (this.inPanel(mouseX, mouseY)) {
          this.panelScroll = Math.max(0.0F, Math.min(this.panelMax, this.panelScroll - (float)verticalAmount * 24.0F));
       } else {
@@ -842,6 +862,10 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
 
    @Override
    public boolean keyPressed(KeyEvent input) {
+      if (this.vote.isOpen()) {
+         return this.vote.keyPressed(input.key());
+      }
+
       for (SettingComponent<?> c : this.components) {
          if (c.isCapturingInput() && c.keyPressed(input.key(), input.keycode(), input.modifiers())) {
             return true;
@@ -858,6 +882,10 @@ public class CosmeticShopScreen extends com.lennart.nebula.compat.MeowlBaseScree
 
    @Override
    public boolean charTyped(CharacterEvent event) {
+      if (this.vote.isOpen()) {
+         return this.vote.charTyped(event.codepoint());
+      }
+
       for (SettingComponent<?> c : this.components) {
          if (c.isCapturingInput() && c.charTyped(event.codepoint())) {
             return true;
