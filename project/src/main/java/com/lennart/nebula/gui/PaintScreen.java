@@ -696,7 +696,7 @@ public class PaintScreen extends com.lennart.nebula.compat.MeowlBaseScreen {
 
    @Override
    public boolean keyPressed(KeyEvent input) {
-      boolean ctrl = (input.modifiers() & 2) != 0;
+      boolean ctrl = com.lennart.nebula.compat.Keys.ctrl(input.modifiers());
       if (ctrl && input.key() == InputConstants.KEY_Z) {
          this.undo();
          return true;
