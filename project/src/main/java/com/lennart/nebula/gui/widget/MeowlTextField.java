@@ -137,7 +137,7 @@ public class MeowlTextField {
       if (!this.focused) {
          return false;
       } else {
-         boolean ctrl = (modifiers & 2) != 0 || (modifiers & 8) != 0;
+         boolean ctrl = com.lennart.nebula.compat.Keys.ctrl(modifiers);
          Minecraft mc = Minecraft.getInstance();
          switch (key) {
             case InputConstants.KEY_A:

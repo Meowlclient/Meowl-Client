@@ -954,7 +954,7 @@ public class FriendsScreen extends Screen {
          return this.chatInput.keyPressed(input.key(), input.modifiers());
       } else if (this.search.isFocused() && input.key() != InputConstants.KEY_ESCAPE) {
          return this.search.keyPressed(input.key(), input.modifiers());
-      } else if (input.key() == InputConstants.KEY_F && (input.modifiers() & 2) != 0) {
+      } else if (input.key() == InputConstants.KEY_F && com.lennart.nebula.compat.Keys.ctrl(input.modifiers())) {
          this.search.setFocused(true);
          return true;
       } else {

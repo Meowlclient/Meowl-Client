@@ -17,6 +17,16 @@ public final class Keys {
       return GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().handle(), button) == 1;
    }
 
+   /** Strg (bzw. Cmd) in den Modifier-Bits eines Tastendrucks – 1.21.11: GLFW (CONTROL = 2, SUPER = 8). */
+   public static boolean ctrl(int modifiers) {
+      return (modifiers & 2) != 0 || (modifiers & 8) != 0;
+   }
+
+   /** Shift in den Modifier-Bits eines Tastendrucks – GLFW: SHIFT = 1. */
+   public static boolean shift(int modifiers) {
+      return (modifiers & 1) != 0;
+   }
+
    public static boolean shiftDown() {
       return keyDown(InputConstants.KEY_LSHIFT) || keyDown(InputConstants.KEY_RSHIFT);
    }

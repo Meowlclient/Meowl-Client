@@ -602,7 +602,7 @@ public class HudEditorScreen extends Screen {
    @Override
    public boolean keyPressed(KeyEvent input) {
       if (this.selected != null && this.visible(this.selected)) {
-         int step = (input.modifiers() & 1) != 0 ? 10 : 1;
+         int step = com.lennart.nebula.compat.Keys.shift(input.modifiers()) ? 10 : 1;
          HudBox b = this.selected.box();
          float dx = 0.0F;
          float dy = 0.0F;
