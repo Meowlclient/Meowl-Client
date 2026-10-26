@@ -175,6 +175,61 @@ def console():
     return COLOR.sub("", out)
 
 
+RESET = {"running": False, "step": "", "done": 0, "error": ""}
+
+
+def set_seed_random():
+    """level-seed leeren: beim nächsten Start würfelt Minecraft eine neue Welt."""
+    path = os.path.join(DIR, "server.properties")
+    lines = open(path, encoding="utf-8").read().splitlines()
+    out = [("level-seed=" if ln.startswith("level-seed=") else ln) for ln in lines]
+    if not any(ln.startswith("level-seed=") for ln in lines):
+        out.append("level-seed=")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out) + "\n")
+
+
+def do_reset(new_seed):
+    """Welt neu: Spieler rauswerfen, Server stoppen, alte Welt sichern, Welt-Ordner löschen (mit Inventaren,
+    Stats, Erfolgen, Toden/Scoreboard), optional neuer Seed, Server wieder starten. Whitelist und OPs bleiben."""
+    def step(t):
+        RESET["step"] = t
+
+    try:
+        step("Spieler werden informiert …")
+        if rcon("say §cDie Welt wird jetzt zurückgesetzt – gleich geht es mit einer neuen Welt weiter!") is not None:
+            time.sleep(3)
+            rcon("kick @a Die Welt wird zurückgesetzt – in ein bis zwei Minuten wieder da")
+            rcon("save-all flush")
+            time.sleep(2)
+        step("Server wird gestoppt …")
+        run("systemctl", "stop", SERVICE, timeout=180)
+        worlds = sorted(d for d in os.listdir(DIR) if d.startswith("world") and os.path.isdir(os.path.join(DIR, d)))
+        if worlds:
+            step("Alte Welt wird gesichert …")
+            os.makedirs(os.path.join(DIR, "backups"), exist_ok=True)
+            name = "vor-reset_" + time.strftime("%Y-%m-%d_%H-%M") + ".tar.gz"
+            r = subprocess.run(["tar", "-czf", os.path.join(DIR, "backups", name), "-C", DIR] + worlds, capture_output=True, text=True, timeout=3600)
+            if r.returncode != 0:
+                raise RuntimeError("Sicherung fehlgeschlagen – Welt wurde NICHT gelöscht: " + (r.stderr or "")[-200:])
+            step("Alte Welt wird gelöscht …")
+            for w in worlds:
+                subprocess.run(["rm", "-rf", "--", os.path.join(DIR, w)], timeout=600)
+        if new_seed:
+            set_seed_random()
+        run("chown", "-R", "minecraft:minecraft", DIR, timeout=300)
+        step("Server startet mit neuer Welt …")
+        run("systemctl", "start", SERVICE, timeout=120)
+        RESET["done"] = time.time()
+        step("Fertig – neue Welt wird erzeugt (erster Start dauert etwas länger)")
+    except Exception as e:  # noqa: BLE001
+        RESET["error"] = str(e)
+        run("systemctl", "start", SERVICE, timeout=120)
+        step("Abgebrochen")
+    finally:
+        RESET["running"] = False
+
+
 def backups():
     d = os.path.join(DIR, "backups")
     items = []
@@ -253,7 +308,13 @@ select{background:#0f121b;border:1px solid var(--line);color:var(--txt);padding:
 <select id="thours"><option value="1">1 Stunde</option><option value="3" selected>3 Stunden</option><option value="12">12 Stunden</option><option value="24">1 Tag</option><option value="72">3 Tage</option><option value="168">7 Tage</option><option value="720">30 Tage</option></select></div>
 <div class="row"><input id="tpw" placeholder="Passwort (leer = zufällig erzeugen)" maxlength="64"><button class="b p" onclick="tmpAdd()">Zugang erstellen</button></div><div id="tnew"></div></div>
 <h2>Aktive Gast-Zugänge</h2><ul id="tlist"></ul></section>
-<section id="bk" class="hide"><div class="row"><button class="b p" onclick="backup()">Backup jetzt erstellen</button></div><p class="k">Automatisch jede Nacht um 4:30, die letzten 7 bleiben.</p><ul id="bks"></ul></section>
+<section id="bk" class="hide"><div class="row"><button class="b p" onclick="backup()">Backup jetzt erstellen</button></div><p class="k">Automatisch jede Nacht um 4:30, die letzten 7 bleiben.</p><ul id="bks"></ul>
+<div data-r="3" class="hide" style="margin-top:18px;padding:12px;border:1px solid #a33;border-radius:10px">
+<b style="color:#ff7a7a">Welt zurücksetzen</b>
+<p class="k">Löscht die Welt mit allen Inventaren, Stats, Erfolgen und Toden. Whitelist und OPs bleiben. Die alte Welt wird vorher als Backup „vor-reset_…“ gesichert (wird nicht automatisch gelöscht).</p>
+<label class="k"><input type="checkbox" id="rseed" checked> Neue Welt mit neuem Seed</label>
+<div class="row"><input id="rconfirm" placeholder="ZURÜCKSETZEN eintippen"><button class="b r" onclick="resetWorld()">Welt zurücksetzen</button></div>
+<p class="k" id="rstate"></p></div></section>
 </main></div><div id="msg"></div>
 <script>
 const $=id=>document.getElementById(id);let tab='home',timer,rank=0;
@@ -292,6 +353,8 @@ async function send(){const c=$('cmd').value.trim();if(!c)return;$('cmd').value=
 async function cmdp(c){const r=await api('/api/command',{cmd:c});msg(r.output||'OK');load()}
 async function wl(a,n){n=n||$('wlname').value.trim();if(!n)return;const r=await api('/api/whitelist',{action:a,name:n});msg(r.message);$('wlname').value='';load()}
 async function op(a,n){n=n||$('opname').value.trim();if(!n)return;const r=await api('/api/op',{action:a,name:n});msg(r.message);$('opname').value='';load()}
+async function resetWorld(){if(!confirm('Wirklich die ganze Welt mit allen Stats und Toden zurücksetzen? Alle Spieler werden gekickt.'))return;const r=await api('/api/reset',{confirm:$('rconfirm').value,newSeed:$('rseed').checked});msg(r.message);$('rconfirm').value='';resetPoll()}
+async function resetPoll(){try{const r=await api('/api/reset');$('rstate').textContent=(r.error?'Fehler: '+r.error+' – ':'')+(r.step||'');if(r.running)setTimeout(resetPoll,1500);else if(tab=='bk')load()}catch(e){}}
 async function backup(){const r=await api('/api/backup',{});msg(r.message);setTimeout(load,4000)}
 fetch('/api/status',{headers:{'X-Panel':'1'}}).then(r=>show(r.status!=401));
 </script></body></html>"""
@@ -377,6 +440,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.deny()
         if self.path == "/api/backups":
             return self.send(200, {"items": backups()})
+        if self.path == "/api/reset":
+            if s["rank"] < 3:
+                return self.deny()
+            return self.send(200, dict(RESET))
         if self.path.startswith("/backups/"):
             name = self.path[len("/backups/"):]
             if not BACKUP.match(name):
@@ -480,6 +547,17 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception:  # noqa: BLE001
                     out = "Spieler nicht gefunden"
             return self.send(200, {"message": out or "OK"})
+        if self.path == "/api/reset":
+            if rank < 3:
+                return self.deny()
+            if str(b.get("confirm", "")).strip().upper() != "ZURÜCKSETZEN":
+                return self.send(200, {"ok": False, "message": "Zum Bestätigen ZURÜCKSETZEN eintippen"})
+            with LOCK:
+                if RESET["running"]:
+                    return self.send(200, {"ok": False, "message": "Reset läuft schon"})
+                RESET.update({"running": True, "step": "Startet …", "done": 0, "error": ""})
+            threading.Thread(target=do_reset, args=(bool(b.get("newSeed")),), daemon=True).start()
+            return self.send(200, {"ok": True, "message": "Reset läuft – alte Welt wird vorher gesichert"})
         if self.path == "/api/backup":
             if rank < 2:
                 return self.deny()
