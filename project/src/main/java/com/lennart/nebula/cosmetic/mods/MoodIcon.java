@@ -1,6 +1,5 @@
 package com.lennart.nebula.cosmetic.mods;
 
-import com.lennart.nebula.cosmetic.Art;
 import com.lennart.nebula.cosmetic.Cosmetic;
 import com.lennart.nebula.cosmetic.CosmeticContext;
 import com.lennart.nebula.cosmetic.CosmeticValue;
@@ -97,14 +96,6 @@ public class MoodIcon extends Cosmetic {
       m.scale(s, s, s);
    }
 
-   private static boolean filled(String[] art, int row, int col) {
-      return row >= 0 && row < art.length && col >= 0 && col < Math.min(7, art[row].length()) && PALETTE.containsKey(art[row].charAt(col));
-   }
-
-   /**
-    * Pixel-Art als weiche Voxel: jeder Pixel ein abgeschrägter Würfel, innen dicker als am Rand (gepolsterter Look),
-    * Farben leicht pastellig wie der Rest der Kollektion.
-    */
    private void pixels(PoseStack m, VertexConsumer vc, String[] art, CosmeticValue v, float b) {
       float bb = Math.max(b, 0.85F);
 
@@ -116,10 +107,7 @@ public class MoodIcon extends Cosmetic {
             if (c != null) {
                float x = col - 3.5F;
                float y = row - 3.5F;
-               int n = (filled(art, row - 1, col) ? 1 : 0) + (filled(art, row + 1, col) ? 1 : 0) + (filled(art, row, col - 1) ? 1 : 0) + (filled(art, row, col + 1) ? 1 : 0);
-               float d = 0.38F + 0.1F * n;
-               int col0 = Art.mix(v.tint(c), Art.WHITE, 0.12F);
-               Art.bevel(m, vc, x, y, -d, x + 1.0F, y + 1.0F, d, 0.07F, col0, bb);
+               Shapes.box(m, vc, x, y, -0.5F, x + 1.0F, y + 1.0F, 0.5F, v.tint(c), bb);
             }
          }
       }

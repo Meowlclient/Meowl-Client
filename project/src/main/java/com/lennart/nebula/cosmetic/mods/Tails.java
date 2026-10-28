@@ -1,6 +1,5 @@
 package com.lennart.nebula.cosmetic.mods;
 
-import com.lennart.nebula.cosmetic.Art;
 import com.lennart.nebula.cosmetic.Cosmetic;
 import com.lennart.nebula.cosmetic.CosmeticContext;
 import com.lennart.nebula.cosmetic.CosmeticValue;
@@ -74,16 +73,7 @@ public class Tails extends Cosmetic {
       switch (st) {
          case "Hase":
             if (!glow) {
-               // Puschel aus mehreren weichen Kugeln, wippt leicht
-               int fur = v.tint(0xFFF7F2EC);
-               float bob = Mth.sin(t * 2.5F) * 0.08F;
-               Art.sphere(m, vc, 0.0F, bob, 1.25F, 1.55F, 1.45F, 1.4F, 4, 8, fur, b);
-               for (int i = 0; i < 6; i++) {
-                  float a = i * 1.047F + 0.3F;
-                  Art.sphere(m, vc, Mth.cos(a) * 1.05F, bob + Mth.sin(a) * 0.95F, 1.55F + (i % 2) * 0.35F, 0.75F, 0.75F, 0.7F, 3, 6, Art.bright(fur, i % 2 == 0 ? 1.0F : 0.94F), b);
-               }
-
-               Art.sphere(m, vc, 0.0F, bob, 2.35F, 0.9F, 0.85F, 0.7F, 3, 6, Art.WHITE, b);
+               Shapes.blob(m, vc, 0.0F, 0.0F, 1.2F, 1.7F, 1.6F + Mth.sin(t * 2.5F) * 0.08F, 1.5F, v.tint(0xFFF4F0EC), b);
             }
             break;
          case "Neunschwanz":
@@ -164,100 +154,59 @@ public class Tails extends Cosmetic {
       m.mulPose(Axis.XP.rotationDegrees(start));
 
       for (int k = 0; k < segs; k++) {
-         float q = (float)k / segs, q1 = (float)(k + 1) / segs;
-         float w = width(st, q), w1 = width(st, q1);
+         float q = (float)k / segs;
+         float w;
+         switch (st) {
+            case "Fuchs":
+               w = 1.2F + Mth.sin(q * (float)Math.PI) * 1.6F;
+               break;
+            case "Wolf":
+               w = 1.1F + Mth.sin(q * (float)Math.PI) * 1.2F;
+               break;
+            case "Drache":
+               w = 1.8F * (1.0F - q * 0.75F);
+               break;
+            case "Teufel":
+               w = 0.55F;
+               break;
+            default:
+               w = 0.9F * (1.0F - q * 0.3F);
+         }
+
          m.mulPose(Axis.YP.rotationDegrees(Mth.sin(t - k * 0.55F) * amp / segs * 2.0F));
          m.mulPose(Axis.XP.rotationDegrees(k == 0 ? 0.0F : curl));
-         int c = st.equals("Fuchs") ? (k >= segs - 2 ? col2 : col1) : Art.mix(col1, col2, q);
-         int c1 = st.equals("Fuchs") ? (k + 1 >= segs - 2 ? col2 : col1) : Art.mix(col1, col2, q1);
+         int c = st.equals("Fuchs") && k >= segs - 2 ? col2 : Shapes.mix(col1, col2, q);
          if (!glow) {
-            // Glied als facettierte, sich verjüngende Röhre; Kugel im Gelenk schließt die Knickstelle
-            int sides = st.equals("Roboter") ? 6 : 7;
+            // Gelenk schließen: kleine Rundung am Anfang jedes Glieds verdeckt die Knickstelle
             if (k > 0) {
-               Art.sphere(m, vc, 0.0F, 0.0F, 0.0F, w * 0.5F, w * 0.5F, w * 0.5F, 3, sides, c, b);
+               Shapes.box(m, vc, -w * 0.52F, -w * 0.52F, -w * 0.3F, w * 0.52F, w * 0.52F, w * 0.3F, c, b);
             }
 
-            Art.limb(m, vc, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, len + 0.05F, w * 0.5F, w1 * 0.5F, sides, Art.mix(c, c1, 0.5F), b);
-            switch (st) {
-               case "Fuchs":
-               case "Wolf":
-                  // Fellbüschel, versetzt je Glied
-                  for (int f = 0; f < 3; f++) {
-                     double a = f * 2.094 + k * 1.1;
-                     float fx = (float)Math.cos(a) * w * 0.42F, fy = (float)Math.sin(a) * w * 0.42F;
-                     Art.taper(m, vc, fx, fy, len * 0.3F, w * 0.28F, fx * 1.35F, fy * 1.35F, len * 1.05F, 0.0F, 4, k * 30.0F, Art.bright(c, f == 0 ? 1.08F : 0.94F), b, false, false);
-                  }
-                  break;
-               case "Drache":
-                  // Rückenstacheln und helle Bauchschuppen
-                  Art.taper(m, vc, 0.0F, -w * 0.4F, len * 0.25F, 0.32F * (1.0F - q * 0.6F), 0.0F, -w * 0.5F - 0.9F * (1.0F - q * 0.7F), len * 0.7F, 0.0F, 4, 45.0F, Art.bright(col1, 0.7F), b, true, false);
-                  Art.box(m, vc, -w * 0.3F, w * 0.36F, len * 0.15F, w * 0.3F, w * 0.48F, len * 0.85F, Art.mix(col2, Art.IVORY, 0.4F), b);
-                  break;
-               case "Roboter":
-                  if (k % 2 == 0) {
-                     m.pushPose();
-                     m.mulPose(Axis.XP.rotationDegrees(90.0F));
-                     Art.frustum(m, vc, 0.0F, 0.0F, -0.05F, -0.45F, w * 0.62F, w * 0.62F, w * 0.62F, w * 0.62F, 8, 22.5F, Art.CHARCOAL, b, true, true);
-                     m.popPose();
-                  }
-                  break;
-               case "Katze":
-               default:
-                  if (st.equals("Katze") && k % 3 == 1) {
-                     // dezente Ringel
-                     m.pushPose();
-                     m.mulPose(Axis.XP.rotationDegrees(90.0F));
-                     Art.frustum(m, vc, 0.0F, 0.0F, -len * 0.35F, -len * 0.6F, w * 0.52F, w * 0.52F, w * 0.5F, w * 0.5F, 7, 0.0F, Art.bright(c, 1.25F), b, false, false);
-                     m.popPose();
-                  }
+            Shapes.box(m, vc, -w / 2.0F, -w / 2.0F, 0.0F, w / 2.0F, w / 2.0F, len + 0.1F, c, b);
+            if (st.equals("Drache")) {
+               Shapes.box(m, vc, -0.2F, -w / 2.0F - 0.7F * (1.0F - q), len * 0.3F, 0.2F, -w / 2.0F, len * 0.7F, 0xFF0F2A18, b);
+            } else if (st.equals("Roboter") && k % 2 == 0) {
+               Shapes.box(m, vc, -w / 2.0F - 0.15F, -w / 2.0F - 0.15F, 0.0F, w / 2.0F + 0.15F, w / 2.0F + 0.15F, 0.4F, 0xFF404048, b);
             }
          } else if (st.equals("Roboter")) {
-            Shapes.glowCube(m, vc, 0.0F, 0.0F, 0.25F, w * 0.4F, v.tint(0xFF40E0FF), 0.55F + 0.3F * Mth.sin(t * 5.0F - k));
+            Shapes.glowCube(m, vc, 0.0F, 0.0F, 0.2F, w * 0.4F, v.tint(0xFF40E0FF), 0.6F + 0.3F * Mth.sin(t * 5.0F - k));
          }
 
          m.translate(0.0F, 0.0F, len);
       }
 
-      if (!glow) {
-         float w = width(st, 1.0F);
-         if (st.equals("Teufel")) {
-            // Pfeilspitze (Pik) mit Kante und kleinem Edelstein
-            int tip = v.tint(0xFFC83A4A);
-            Art.face(m, vc, tip, b, 0.0F, 0.0F, 1.2F, -1.4F, -0.25F, 0.9F, 0.0F, -0.25F, -0.1F, 1.4F, -0.25F, 0.9F, 0.0F, -0.25F, 2.8F);
-            Art.face(m, vc, tip, b, 0.0F, 0.0F, 1.2F, -1.4F, 0.25F, 0.9F, 0.0F, 0.25F, -0.1F, 1.4F, 0.25F, 0.9F, 0.0F, 0.25F, 2.8F);
-            float[][] o = {{-1.4F, 0.9F}, {0.0F, -0.1F}, {1.4F, 0.9F}, {0.0F, 2.8F}};
-            for (int i = 0; i < 4; i++) {
-               int j = (i + 1) % 4;
-               Art.face(m, vc, Art.bright(tip, 0.85F), b, 0.0F, 0.0F, 1.2F, o[i][0], -0.25F, o[i][1], o[j][0], -0.25F, o[j][1], o[j][0], 0.25F, o[j][1], o[i][0], 0.25F, o[i][1]);
+      if (st.equals("Teufel")) {
+         if (!glow) {
+            for (int i = 0; i < 3; i++) {
+               float r = 1.3F * (1.0F - i * 0.33F);
+               Shapes.box(m, vc, -r, -0.3F, i * 0.8F, r, 0.3F, i * 0.8F + 0.8F, v.tint(0xFFC02020), b);
             }
-
-            Art.gem(m, vc, 0.0F, -0.25F, 1.1F, 0.3F, 0.25F, 0.05F, 4, 45.0F, Art.GOLD, b);
-         } else if (st.equals("Fuchs") || st.equals("Wolf")) {
-            Art.taper(m, vc, 0.0F, 0.0F, 0.0F, w * 0.5F, 0.0F, 0.0F, 1.3F, 0.0F, 7, 0.0F, col2, b, false, false);
-         } else if (st.equals("Roboter")) {
-            Art.gem(m, vc, 0.0F, 0.0F, 0.6F, 0.55F, 0.6F, 0.6F, 4, 45.0F, Art.SILVER, b);
-         } else if (st.equals("Drache")) {
-            Art.taper(m, vc, 0.0F, 0.0F, 0.0F, w * 0.5F, 0.0F, 0.0F, 1.6F, 0.0F, 5, 0.0F, col1, b, false, false);
          } else {
-            Art.sphere(m, vc, 0.0F, 0.0F, 0.0F, w * 0.5F, w * 0.5F, w * 0.55F, 3, 7, col2, b);
+            Shapes.glow(m, vc, -1.3F, -0.4F, 0.0F, 1.3F, 0.4F, 2.4F, v.tint(0xFFFF3010), 0.35F);
          }
-      } else if (st.equals("Teufel")) {
-         Shapes.glow(m, vc, -1.3F, -0.4F, 0.0F, 1.3F, 0.4F, 2.4F, v.tint(0xFFFF3010), 0.3F);
       }
 
       m.popPose();
-   }
-
-   /** Dicke des Schweifs entlang der Länge (q = 0 Ansatz, 1 Spitze). */
-   private static float width(String st, float q) {
-      return switch (st) {
-         case "Fuchs" -> 1.2F + Mth.sin(Math.min(q, 0.92F) * (float)Math.PI) * 1.7F;
-         case "Wolf" -> 1.1F + Mth.sin(Math.min(q, 0.92F) * (float)Math.PI) * 1.2F;
-         case "Drache" -> 1.8F * (1.0F - q * 0.78F);
-         case "Teufel" -> 0.6F - q * 0.15F;
-         case "Roboter" -> 0.95F - q * 0.25F;
-         default -> 0.95F * (1.0F - q * 0.35F);
-      };
    }
 
    @Override

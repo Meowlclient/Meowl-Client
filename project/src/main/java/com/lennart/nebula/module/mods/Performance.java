@@ -100,6 +100,7 @@ public class Performance extends Module {
          return;
       }
 
+      Perf.wantBackground();
       net.minecraft.client.gui.Font font = this.mc.font;
       Map<Object, Double> cost = Perf.msPerFrame();
       List<Object[]> rows = new ArrayList<>();

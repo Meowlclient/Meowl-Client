@@ -1,6 +1,5 @@
 package com.lennart.nebula.cosmetic.mods;
 
-import com.lennart.nebula.cosmetic.Art;
 import com.lennart.nebula.cosmetic.Cosmetic;
 import com.lennart.nebula.cosmetic.CosmeticContext;
 import com.lennart.nebula.cosmetic.CosmeticValue;
@@ -19,10 +18,10 @@ import net.minecraft.world.item.Items;
 
 /** Auren: leuchtender Kreis am Boden, aufsteigende Lichter und passende Effekte rund um den Spieler. */
 public class Aura extends Cosmetic {
-   public static final String[] STYLES = {"Feuer", "Frost", "Blitz", "Sakura", "Galaxie", "Herzen", "Musik", "Schatten", "Gift", "Gold", "Wind", "Regenbogen", "Hanami"};
+   public static final String[] STYLES = {"Feuer", "Frost", "Blitz", "Sakura", "Galaxie", "Herzen", "Musik", "Schatten", "Gift", "Gold", "Wind", "Regenbogen"};
 
    public Aura() {
-      super("Auren", "Aura um deinen Charakter: Feuer, Frost, Blitz, Sakura, Galaxie, Herzen, Musik, Schatten, Hanami und mehr – mit Licht und Partikeln.", "aura", Items.BLAZE_POWDER, STYLES);
+      super("Auren", "Aura um deinen Charakter: Feuer, Frost, Blitz, Sakura, Galaxie, Herzen, Musik, Schatten und mehr – mit Licht und Partikeln.", "aura", Items.BLAZE_POWDER, STYLES);
       this.groups();
    }
 
@@ -39,7 +38,6 @@ public class Aura extends Cosmetic {
          case "Gold" -> 0xFFFFD040;
          case "Wind" -> 0xFFE8F4FF;
          case "Regenbogen" -> 0xFFFF6060;
-         case "Hanami" -> 0xFFF4A6BE;
          default -> 0xFFFF7A20;
       };
    }
@@ -159,47 +157,17 @@ public class Aura extends Cosmetic {
 
    private void solid(PoseStack m, VertexConsumer vc, String st, CosmeticValue v, float t, float b) {
       switch (st) {
-         case "Hanami": {
-            // Kirschblütenfest: Blütenteppich am Boden, schwebende rosa Kristalle, fallende Blätter
-            int pink = v.tint(Art.SAKURA);
-            for (int i = 0; i < 26; i++) {
-               float a = Art.hash(i, 21) * 6.2832F, r = 4.5F + Art.hash(i, 22) * 5.0F;
-               Art.petal(m, vc, Mth.cos(a) * r, -0.08F, Mth.sin(a) * r, 1.6F + Art.hash(i, 23) * 0.9F, Art.hash(i, 24) * 360.0F, -12.0F, i % 3 == 0 ? Art.BLOSSOM : pink, b);
-            }
-
-            for (int i = 0; i < 6; i++) {
-               float a = i * 1.047F + 0.4F, r = 6.5F + (i % 2) * 1.6F;
-               Art.sakura(m, vc, Mth.cos(a) * r, -0.15F, Mth.sin(a) * r, 1.7F, i * 31.0F, pink, Math.max(b, 0.7F));
-            }
-
-            for (int i = 0; i < 4; i++) {
-               float a = t * 0.6F + i * 1.5708F;
-               float y = -14.0F + Mth.sin(t * 1.4F + i * 1.7F) * 1.2F;
-               m.pushPose();
-               m.translate(Mth.cos(a) * 7.5F, y, Mth.sin(a) * 7.5F);
-               m.mulPose(Axis.YP.rotationDegrees(t * 50.0F + i * 90.0F));
-               Art.gem(m, vc, 0.0F, 0.0F, 0.0F, 1.0F, 1.5F, 1.5F, 4, 0.0F, i % 2 == 0 ? pink : Art.WHITE, Math.max(b, 0.85F));
-               m.popPose();
-            }
-
-            Art.drift(m, vc, 0.0F, -34.0F, 0.0F, 9.0F, 34.0F, 22, t, 2.2F, b);
-            break;
-         }
          case "Frost":
-            // Eiskristall-Gruppen im Kreis, je ein großer und zwei kleine Kristalle
             for (int i = 0; i < 10; i++) {
                m.pushPose();
                m.mulPose(Axis.YP.rotationDegrees(i * 36.0F + 10.0F));
                float h = 2.5F + (i * 7 % 5) * 0.8F;
-               int ice = v.tint(0xFFC4ECFA);
-               Art.gem(m, vc, 9.0F, -0.2F, 0.0F, 0.6F, h, 0.2F, 6, i * 17.0F, ice, Math.max(b, 0.85F));
-               Art.gem(m, vc, 8.2F, -0.1F, 0.7F, 0.38F, h * 0.5F, 0.1F, 5, i * 31.0F, Art.mix(ice, Art.WHITE, 0.4F), Math.max(b, 0.85F));
-               Art.gem(m, vc, 9.6F, -0.1F, -0.6F, 0.32F, h * 0.4F, 0.1F, 5, i * 11.0F, ice, Math.max(b, 0.85F));
+               Shapes.box(m, vc, 8.6F, -h, -0.45F, 9.4F, 0.0F, 0.45F, v.tint(0xFFB8ECFF), Math.max(b, 0.8F));
+               Shapes.box(m, vc, 8.8F, -h - 1.0F, -0.25F, 9.2F, -h, 0.25F, 0xFFFFFFFF, Math.max(b, 0.8F));
                m.popPose();
             }
             break;
          case "Sakura":
-            // taumelnde Blütenblätter und ein paar ganze Blüten, die herabsinken
             for (int i = 0; i < 12; i++) {
                float ph = frac(t * 0.18F + i / 12.0F);
                float ang = i * 2.1F + t * 0.6F + ph * 3.0F;
@@ -207,13 +175,8 @@ public class Aura extends Cosmetic {
                m.pushPose();
                m.translate(Mth.cos(ang) * r, -30.0F + ph * 30.0F, Mth.sin(ang) * r);
                m.mulPose(Axis.YP.rotationDegrees(t * 90.0F + i * 40.0F));
-               m.mulPose(Axis.XP.rotationDegrees(Mth.sin(t * 2.0F + i) * 50.0F));
-               if (i % 4 == 0) {
-                  Art.sakura(m, vc, 0.0F, 0.0F, 0.0F, 1.3F, i * 20.0F, v.tint(Art.SAKURA), Math.max(b, 0.75F));
-               } else {
-                  Art.petal(m, vc, 0.0F, 0.0F, 0.0F, 1.6F, 0.0F, 15.0F, v.tint(i % 3 == 0 ? Art.BLOSSOM : Art.SAKURA), Math.max(b, 0.75F));
-               }
-
+               m.mulPose(Axis.XP.rotationDegrees(t * 70.0F + i * 25.0F));
+               Shapes.box(m, vc, -0.7F, -0.1F, -0.45F, 0.7F, 0.1F, 0.45F, v.tint(i % 3 == 0 ? 0xFFFFFFFF : 0xFFFFA8CC), Math.max(b, 0.7F));
                m.popPose();
             }
             break;
@@ -226,56 +189,39 @@ public class Aura extends Cosmetic {
                m.pushPose();
                m.translate(Mth.cos(ang) * 7.0F, y, Mth.sin(ang) * 7.0F);
                m.scale(sz, sz, sz);
-               m.mulPose(Axis.YP.rotationDegrees(-ang * 57.3F + 90.0F + Mth.sin(t * 2.0F + i) * 25.0F));
-               Art.extrude(m, vc, 0.0F, 0.0F, Art.heart(1.9F, 20), -0.45F, 0.45F, v.tint(0xFFF0607E), Math.max(b, 0.85F));
-               Art.box(m, vc, -1.15F, -1.0F, -0.5F, -0.65F, -0.6F, -0.46F, 0xFFFFFFFF, 1.0F);
+               heart(m, vc, v.tint(0xFFFF4A7A), Math.max(b, 0.8F));
                m.popPose();
             }
             break;
          case "Musik":
-            // Achtelnoten: ovaler Notenkopf, Hals und geschwungene Fahne
             for (int i = 0; i < 5; i++) {
                float ph = frac(t * 0.22F + i / 5.0F);
                float ang = i * 1.3F + t * 0.4F;
-               float sz = 0.7F + Mth.sin(ph * (float)Math.PI) * 0.4F;
                m.pushPose();
                m.translate(Mth.cos(ang) * 7.5F, -ph * 30.0F, Mth.sin(ang) * 7.5F);
-               m.mulPose(Axis.YP.rotationDegrees(-ang * 57.3F + 90.0F));
                m.mulPose(Axis.ZP.rotationDegrees(Mth.sin(t * 3.0F + i) * 15.0F));
-               m.scale(sz, sz, sz);
-               int nc = Shapes.hsv(i / 5.0F + v.hue() / 360.0F, 0.45F, 1.0F);
-               m.pushPose();
-               m.mulPose(Axis.ZP.rotationDegrees(-20.0F));
-               Art.sphere(m, vc, -0.4F, 0.0F, 0.0F, 1.15F, 0.8F, 0.6F, 3, 8, nc, Math.max(b, 0.8F));
-               m.popPose();
-               Art.limb(m, vc, 0.55F, -0.3F, 0.0F, 0.55F, -4.6F, 0.0F, 0.2F, 0.2F, 5, nc, Math.max(b, 0.8F));
-               Art.taper(m, vc, 0.55F, -4.6F, 0.0F, 0.3F, 2.0F, -2.6F, 0.0F, 0.05F, 5, 0.0F, Art.bright(nc, 0.9F), Math.max(b, 0.8F), true, false);
+               int nc = Shapes.hsv(i / 5.0F + v.hue() / 360.0F, 0.6F, 1.0F);
+               Shapes.box(m, vc, -1.2F, -0.9F, -0.3F, 0.4F, 0.6F, 0.3F, nc, Math.max(b, 0.8F));
+               Shapes.box(m, vc, 0.0F, -4.5F, -0.2F, 0.45F, -0.4F, 0.2F, nc, Math.max(b, 0.8F));
+               Shapes.box(m, vc, 0.0F, -4.5F, -0.2F, 1.8F, -3.8F, 0.2F, nc, Math.max(b, 0.8F));
                m.popPose();
             }
             break;
          case "Gift":
-            // aufsteigende Blasen mit Glanzpunkt
             for (int i = 0; i < 9; i++) {
                float ph = frac(t * 0.3F + i / 9.0F);
                float ang = i * 2.0F;
                float r = 0.4F + Mth.sin(ph * (float)Math.PI) * 0.7F;
-               float x = Mth.cos(ang) * 7.5F, y = -ph * 18.0F, z = Mth.sin(ang) * 7.5F;
-               Art.sphere(m, vc, x, y, z, r, r, r, 3, 7, v.tint(0xFF7ADA54), Math.max(b, 0.75F));
-               Art.sphere(m, vc, x - r * 0.35F, y - r * 0.4F, z - r * 0.35F, r * 0.25F, r * 0.25F, r * 0.25F, 2, 5, 0xFFF4FFE8, 1.0F);
+               Shapes.ball(m, vc, Mth.cos(ang) * 7.5F, -ph * 18.0F, Mth.sin(ang) * 7.5F, r, v.tint(0xFF60D030), Math.max(b, 0.7F));
             }
             break;
          case "Gold":
-            // Goldmünzen mit Rand und Prägung, drehen sich im Kreis
             for (int i = 0; i < 6; i++) {
                float ang = t * 1.2F + i * 1.047F;
-               int gold = v.tint(0xFFE8C25A);
                m.pushPose();
                m.translate(Mth.cos(ang) * 9.0F, -2.0F - Mth.sin(t * 2.0F + i) * 1.5F, Mth.sin(ang) * 9.0F);
                m.mulPose(Axis.YP.rotationDegrees(t * 120.0F + i * 30.0F));
-               m.mulPose(Axis.XP.rotationDegrees(90.0F));
-               Art.frustum(m, vc, 0.0F, 0.0F, -0.18F, 0.18F, 1.05F, 1.05F, 1.05F, 1.05F, 12, 0.0F, gold, Math.max(b, 0.85F), true, true);
-               Art.ring(m, vc, 0.0F, 0.0F, -0.24F, 0.24F, 0.8F, 1.1F, 1.0F, 12, 0.0F, Art.bright(gold, 1.12F), Math.max(b, 0.85F));
-               Art.diamond(m, vc, 0.0F, 0.0F, 0.0F, 0.42F, 1, Art.bright(gold, 0.85F), Math.max(b, 0.85F));
+               Shapes.box(m, vc, -1.0F, -1.0F, -0.2F, 1.0F, 1.0F, 0.2F, v.tint(0xFFF0C030), Math.max(b, 0.85F));
                m.popPose();
             }
             break;
@@ -307,7 +253,7 @@ public class Aura extends Cosmetic {
             case "Feuer" -> r.nextBoolean() ? ParticleTypes.FLAME : ParticleTypes.SMALL_FLAME;
             case "Frost" -> ParticleTypes.SNOWFLAKE;
             case "Blitz" -> ParticleTypes.ELECTRIC_SPARK;
-            case "Sakura", "Hanami" -> ParticleTypes.CHERRY_LEAVES;
+            case "Sakura" -> ParticleTypes.CHERRY_LEAVES;
             case "Galaxie" -> ParticleTypes.END_ROD;
             case "Herzen" -> ParticleTypes.HEART;
             case "Musik" -> ParticleTypes.NOTE;

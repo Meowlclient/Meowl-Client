@@ -70,8 +70,11 @@ public final class Art {
    }
 
    private static float hash(float x, float y, float z) {
-      float h = (float)Math.sin(x * 12.9898F + y * 78.233F + z * 37.719F) * 43758.547F;
-      return h - (float)Math.floor(h);
+      int h = Float.floatToIntBits(x) * 73856093 ^ Float.floatToIntBits(y) * 19349663 ^ Float.floatToIntBits(z) * 83492791;
+      h ^= h >>> 13;
+      h *= 0x5BD1E995;
+      h ^= h >>> 15;
+      return (h & 0xFFFFFF) / 16777216.0F;
    }
 
    // ================================================================== Flächen
@@ -113,9 +116,100 @@ public final class Art {
 
       int c = light(argb, nx, ny, nz, b, (hash(mx, my, mz) - 0.5F) * 0.06F);
       Matrix4f m = ms.last().pose();
-      int[] order = n == 3 ? (flip ? new int[]{0, 2, 1, 1} : new int[]{0, 1, 2, 2}) : (flip ? new int[]{0, 3, 2, 1} : new int[]{0, 1, 2, 3});
+      int[] order = n == 3 ? (flip ? TRI_BACK : TRI_FRONT) : (flip ? QUAD_BACK : QUAD_FRONT);
       for (int i : order) {
          vertex(vc, m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2], c);
+      }
+   }
+
+   private static final int[] TRI_FRONT = {0, 1, 2, 2};
+   private static final int[] TRI_BACK = {0, 2, 1, 1};
+   private static final int[] QUAD_FRONT = {0, 1, 2, 3};
+   private static final int[] QUAD_BACK = {0, 3, 2, 1};
+
+   /** Dreieck ohne Hilfs-Arrays (häufigster Fall; spart pro Bild sehr viel Speicher-Müll). */
+   public static void face(
+      PoseStack ms, VertexConsumer vc, int argb, float b, float ix, float iy, float iz, float x0, float y0, float z0, float x1, float y1, float z1, float x2,
+      float y2, float z2
+   ) {
+      poly(ms, vc, argb, b, ix, iy, iz, false, 3, x0, y0, z0, x1, y1, z1, x2, y2, z2, x2, y2, z2);
+   }
+
+   /** Viereck ohne Hilfs-Arrays. */
+   public static void face(
+      PoseStack ms, VertexConsumer vc, int argb, float b, float ix, float iy, float iz, float x0, float y0, float z0, float x1, float y1, float z1, float x2,
+      float y2, float z2, float x3, float y3, float z3
+   ) {
+      poly(ms, vc, argb, b, ix, iy, iz, false, 4, x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3);
+   }
+
+   /** Beidseitiges Dreieck ohne Hilfs-Arrays. */
+   public static void sheet(PoseStack ms, VertexConsumer vc, int argb, float b, float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2) {
+      poly(ms, vc, argb, b, 0.0F, 0.0F, 0.0F, true, 3, x0, y0, z0, x1, y1, z1, x2, y2, z2, x2, y2, z2);
+   }
+
+   /** Beidseitiges Viereck ohne Hilfs-Arrays. */
+   public static void sheet(
+      PoseStack ms, VertexConsumer vc, int argb, float b, float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, float x3,
+      float y3, float z3
+   ) {
+      poly(ms, vc, argb, b, 0.0F, 0.0F, 0.0F, true, 4, x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3);
+   }
+
+   /** Gemeinsamer Kern: Normale, Licht und die vier Ecken (beim Dreieck ist die letzte doppelt). */
+   private static void poly(
+      PoseStack ms, VertexConsumer vc, int argb, float b, float ix, float iy, float iz, boolean twoSided, int n, float x0, float y0, float z0, float x1,
+      float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3
+   ) {
+      float ux = x1 - x0, uy = y1 - y0, uz = z1 - z0;
+      float vx = x2 - x0, vy = y2 - y0, vz = z2 - z0;
+      float nx = uy * vz - uz * vy;
+      float ny = uz * vx - ux * vz;
+      float nz = ux * vy - uy * vx;
+      float mx, my, mz;
+      if (n == 3) {
+         mx = (x0 + x1 + x2) / 3.0F;
+         my = (y0 + y1 + y2) / 3.0F;
+         mz = (z0 + z1 + z2) / 3.0F;
+      } else {
+         mx = (x0 + x1 + x2 + x3) * 0.25F;
+         my = (y0 + y1 + y2 + y3) * 0.25F;
+         mz = (z0 + z1 + z2 + z3) * 0.25F;
+      }
+
+      float j = (hash(mx, my, mz) - 0.5F) * 0.06F;
+      Matrix4f m = ms.last().pose();
+      if (twoSided) {
+         int front = light(argb, nx, ny, nz, b, j);
+         int back = light(argb, -nx, -ny, -nz, b, j);
+         vertex(vc, m, x0, y0, z0, front);
+         vertex(vc, m, x1, y1, z1, front);
+         vertex(vc, m, x2, y2, z2, front);
+         vertex(vc, m, x3, y3, z3, front);
+         vertex(vc, m, x0, y0, z0, back);
+         vertex(vc, m, x3, y3, z3, back);
+         vertex(vc, m, x2, y2, z2, back);
+         vertex(vc, m, x1, y1, z1, back);
+         return;
+      }
+
+      boolean flip = nx * (mx - ix) + ny * (my - iy) + nz * (mz - iz) < 0.0F;
+      if (flip) {
+         nx = -nx;
+         ny = -ny;
+         nz = -nz;
+      }
+
+      int c = light(argb, nx, ny, nz, b, j);
+      vertex(vc, m, x0, y0, z0, c);
+      if (flip) {
+         vertex(vc, m, x3, y3, z3, c);
+         vertex(vc, m, x2, y2, z2, c);
+         vertex(vc, m, x1, y1, z1, c);
+      } else {
+         vertex(vc, m, x1, y1, z1, c);
+         vertex(vc, m, x2, y2, z2, c);
+         vertex(vc, m, x3, y3, z3, c);
       }
    }
 
@@ -141,8 +235,8 @@ public final class Art {
       Matrix4f m = ms.last().pose();
       int front = light(argb, nx, ny, nz, b, j);
       int back = light(argb, -nx, -ny, -nz, b, j);
-      int[] fw = n == 3 ? new int[]{0, 1, 2, 2} : new int[]{0, 1, 2, 3};
-      int[] bw = n == 3 ? new int[]{0, 2, 1, 1} : new int[]{0, 3, 2, 1};
+      int[] fw = n == 3 ? TRI_FRONT : QUAD_FRONT;
+      int[] bw = n == 3 ? TRI_BACK : QUAD_BACK;
       for (int i : fw) {
          vertex(vc, m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2], front);
       }
@@ -408,25 +502,27 @@ public final class Art {
       uz /= ul;
       float wx = dy * uz - dz * uy, wy = dz * ux - dx * uz, wz = dx * uy - dy * ux;
       float mx = (x1 + x2) / 2.0F, my = (y1 + y2) / 2.0F, mz = (z1 + z2) / 2.0F;
-      float[][] a = new float[n][], c = new float[n][];
+      float co0 = 1.0F, si0 = 0.0F;
       for (int i = 0; i < n; i++) {
-         double t = Math.PI * 2.0 * i / n;
-         float co = (float)Math.cos(t), si = (float)Math.sin(t);
-         float ox = ux * co + wx * si, oy = uy * co + wy * si, oz = uz * co + wz * si;
-         a[i] = new float[]{x1 + ox * r1, y1 + oy * r1, z1 + oz * r1};
-         c[i] = new float[]{x2 + ox * r2, y2 + oy * r2, z2 + oz * r2};
-      }
-
-      for (int i = 0; i < n; i++) {
-         int j = (i + 1) % n;
+         double t = Math.PI * 2.0 * (i + 1) / n;
+         float co1 = (float)Math.cos(t), si1 = (float)Math.sin(t);
+         // Richtungen der beiden Ringpunkte i und i+1
+         float oxi = ux * co0 + wx * si0, oyi = uy * co0 + wy * si0, ozi = uz * co0 + wz * si0;
+         float oxj = ux * co1 + wx * si1, oyj = uy * co1 + wy * si1, ozj = uz * co1 + wz * si1;
+         float aix = x1 + oxi * r1, aiy = y1 + oyi * r1, aiz = z1 + ozi * r1;
+         float ajx = x1 + oxj * r1, ajy = y1 + oyj * r1, ajz = z1 + ozj * r1;
          if (r2 < 0.01F) {
-            face(m, vc, argb, b, mx, my, mz, a[i][0], a[i][1], a[i][2], a[j][0], a[j][1], a[j][2], x2, y2, z2);
+            face(m, vc, argb, b, mx, my, mz, aix, aiy, aiz, ajx, ajy, ajz, x2, y2, z2);
          } else {
-            face(m, vc, argb, b, mx, my, mz, a[i][0], a[i][1], a[i][2], a[j][0], a[j][1], a[j][2], c[j][0], c[j][1], c[j][2], c[i][0], c[i][1], c[i][2]);
-            face(m, vc, argb, b, mx, my, mz, x2, y2, z2, c[i][0], c[i][1], c[i][2], c[j][0], c[j][1], c[j][2]);
+            float cix = x2 + oxi * r2, ciy = y2 + oyi * r2, ciz = z2 + ozi * r2;
+            float cjx = x2 + oxj * r2, cjy = y2 + oyj * r2, cjz = z2 + ozj * r2;
+            face(m, vc, argb, b, mx, my, mz, aix, aiy, aiz, ajx, ajy, ajz, cjx, cjy, cjz, cix, ciy, ciz);
+            face(m, vc, argb, b, mx, my, mz, x2, y2, z2, cix, ciy, ciz, cjx, cjy, cjz);
          }
 
-         face(m, vc, argb, b, mx, my, mz, x1, y1, z1, a[i][0], a[i][1], a[i][2], a[j][0], a[j][1], a[j][2]);
+         face(m, vc, argb, b, mx, my, mz, x1, y1, z1, aix, aiy, aiz, ajx, ajy, ajz);
+         co0 = co1;
+         si0 = si1;
       }
    }
 
@@ -540,8 +636,10 @@ public final class Art {
     * Blütenwolke wie an einem Kirschbaum: gestaffelte Würfel in Rosatönen (Voxel-Look) mit einzelnen offenen Blüten
     * obendrauf. Mitte (x, y, z), Radius s, {@code seed} variiert die Form.
     */
+   private static final int[] BLOOM_COLS = {SAKURA, BLOSSOM, mix(SAKURA, ROSE, 0.35F), WHITE, mix(BLOSSOM, SAKURA, 0.5F)};
+
    public static void bloom(PoseStack m, VertexConsumer vc, float x, float y, float z, float s, int seed, float b) {
-      int[] cols = {SAKURA, BLOSSOM, mix(SAKURA, ROSE, 0.35F), WHITE, mix(BLOSSOM, SAKURA, 0.5F)};
+      int[] cols = BLOOM_COLS;
       for (int i = 0; i < 12; i++) {
          float a = hash(seed, i) * 6.2832F, h = hash(seed + 7, i), r = (0.25F + hash(seed + 3, i) * 0.6F) * s;
          float cx = x + (float)Math.cos(a) * r, cy = y - (h - 0.35F) * s * 0.9F, cz = z + (float)Math.sin(a) * r;
@@ -550,11 +648,11 @@ public final class Art {
          m.translate(cx, cy, cz);
          m.mulPose(Axis.YP.rotationDegrees(hash(seed + 5, i) * 90.0F));
          m.mulPose(Axis.XP.rotationDegrees((hash(seed + 9, i) - 0.5F) * 40.0F));
-         bevel(m, vc, -q, -q, -q, q, q, q, q * 0.22F, cols[(seed + i) % cols.length], Math.max(b, 0.7F));
+         box(m, vc, -q, -q, -q, q, q, q, cols[(seed + i) % cols.length], Math.max(b, 0.7F));
          m.popPose();
       }
 
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 2; i++) {
          float a = hash(seed + 13, i) * 6.2832F, r = hash(seed + 17, i) * 0.5F * s;
          sakura(m, vc, x + (float)Math.cos(a) * r, y - 0.55F * s - hash(seed + 19, i) * 0.3F * s, z + (float)Math.sin(a) * r, 0.42F * s, a * 57.3F, BLOSSOM, Math.max(b, 0.7F));
       }
