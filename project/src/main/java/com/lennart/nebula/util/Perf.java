@@ -94,18 +94,55 @@ public final class Perf {
       msPerFrame = out;
       fps = Math.round(frames * 1.0E9F / win);
       frameMs = win / 1.0E6 / Math.max(1, frames);
-      background = sampleBackground(win);
+      // Hintergrund-Last nur, wenn jemand hinschaut (Overlay/Menü), und nie auf dem Render-Thread:
+      // die Prozessliste abzufragen dauert unter Windows 15+ ms und würde sonst jede Sekunde ruckeln
+      if (System.currentTimeMillis() - wanted < 3000L && !sampling) {
+         sampling = true;
+         long w = win;
+         Thread t = new Thread(() -> {
+            try {
+               background = sampleBackground(w);
+            } finally {
+               sampling = false;
+            }
+         }, "Meowl-Leistung");
+         t.setDaemon(true);
+         t.setPriority(Thread.MIN_PRIORITY);
+         t.start();
+      } else if (System.currentTimeMillis() - wanted >= 3000L) {
+         background = Map.of();
+      }
       frames = 0;
       windowStart = now;
    }
 
+   private static volatile long wanted;
+   private static volatile boolean sampling;
+
+   /** Overlay bzw. Leistungs-Menü sichtbar: Hintergrund-Last messen (sonst wird gar nicht gemessen). */
+   public static void wantBackground() {
+      wanted = System.currentTimeMillis();
+   }
+
+   /** Alle Threads ohne Stapel-Abfrage (die hält sonst kurz die ganze Java-VM an). */
+   private static Thread[] threads() {
+      ThreadGroup g = Thread.currentThread().getThreadGroup();
+      while (g.getParent() != null) {
+         g = g.getParent();
+      }
+
+      Thread[] all = new Thread[g.activeCount() * 2 + 16];
+      int n = g.enumerate(all, true);
+      return java.util.Arrays.copyOf(all, n);
+   }
+
    /** CPU der eigenen Threads („Meowl-…“) und Hilfsprozesse (z.B. PowerShell für Spotify) in % eines Kerns. */
-   private static Map<String, Double> sampleBackground(long win) {
+   private static synchronized Map<String, Double> sampleBackground(long win) {
       Map<String, Double> out = new LinkedHashMap<>();
       try {
          if (BEAN.isThreadCpuTimeSupported()) {
             Map<Long, Long> seen = new HashMap<>();
-            for (Thread t : Thread.getAllStackTraces().keySet()) {
+            for (Thread t : threads()) {
                String name = t.getName();
                // eigene Threads und die HTTP-Arbeiter (Netzwerk des Clients: Meowl Server, Bilder, Streaming …)
                if (name.startsWith("HttpClient")) {

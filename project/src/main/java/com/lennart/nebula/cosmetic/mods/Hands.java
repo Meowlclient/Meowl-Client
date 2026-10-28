@@ -1,6 +1,5 @@
 package com.lennart.nebula.cosmetic.mods;
 
-import com.lennart.nebula.cosmetic.Art;
 import com.lennart.nebula.cosmetic.Cosmetic;
 import com.lennart.nebula.cosmetic.CosmeticContext;
 import com.lennart.nebula.cosmetic.CosmeticValue;
@@ -125,72 +124,34 @@ public class Hands extends Cosmetic {
       }
    }
 
-   /** Ursprung = Mitte der Faust (Arm 4x4, nach unten = +y, vorn = -z). */
+   /** Ursprung = Mitte der Faust. */
    private void solid(PoseStack m, VertexConsumer vc, String st, CosmeticValue v, float t, float b, int side) {
       switch (st) {
-         case "Eishände": {
-            // Eiskristalle wachsen schräg aus der Faust, dazu eine dünne Frostschicht
-            int ice = v.tint(0xFFC4ECFA);
-            Art.bevel(m, vc, -2.15F, -1.2F, -2.15F, 2.15F, 1.4F, 2.15F, 0.3F, Art.mix(ice, Art.WHITE, 0.4F), Math.max(b, 0.8F));
-            for (int k = 0; k < 6; k++) {
+         case "Eishände":
+            for (int k = 0; k < 5; k++) {
                m.pushPose();
-               m.rotate(Axis.YP.rotationDegrees(k * 60.0F + side * 30.0F));
-               m.rotate(Axis.ZP.rotationDegrees(-35.0F - (k % 3) * 12.0F));
-               float len = 2.4F + (k * 7 % 4) * 0.5F;
-               Art.gem(m, vc, 0.0F, -2.5F, 0.0F, 0.5F, len, 0.6F, 6, k * 20.0F, k % 2 == 0 ? ice : Art.mix(ice, Art.WHITE, 0.3F), Math.max(b, 0.85F));
+               m.rotate(Axis.YP.rotationDegrees(k * 72.0F + side * 30.0F));
+               m.rotate(Axis.ZP.rotationDegrees(-25.0F - k * 6.0F));
+               Shapes.box(m, vc, 1.6F, -0.4F, -0.4F, 4.0F - k % 2, 0.4F, 0.4F, v.tint(0xFFB8ECFF), Math.max(b, 0.8F));
                m.popPose();
             }
             break;
-         }
          case "Boxhandschuhe": {
-            // runder Handschuh mit abgesetztem Daumen, weißer Stulpe und Schnürung
-            int glove = v.tint(0xFFD8485A);
-            int dark = Art.bright(glove, 0.85F);
-            Art.sphere(m, vc, 0.0F, 0.9F, -0.3F, 2.75F, 2.5F, 2.9F, 4, 10, glove, b);
-            Art.sphere(m, vc, side == 0 ? 2.2F : -2.2F, 0.6F, -1.4F, 0.95F, 1.4F, 1.0F, 3, 7, dark, b);
-            Art.frustum(m, vc, 0.0F, 0.0F, -3.4F, -1.3F, 2.5F, 2.5F, 2.65F, 2.65F, 10, 0.0F, Art.WHITE, b, true, false);
-            Art.ring(m, vc, 0.0F, 0.0F, -1.6F, -1.2F, 2.4F, 2.85F, 1.0F, 10, 0.0F, Art.IVORY, b);
-            for (int i = 0; i < 3; i++) {
-               float y = -3.0F + i * 0.6F;
-               Art.box(m, vc, -0.7F, y, -2.65F, 0.7F, y + 0.16F, -2.5F, Art.CHARCOAL, b);
-            }
-
-            Art.diamond(m, vc, 0.0F, 0.9F, -3.22F, 0.5F, 2, Art.WHITE, b);
+            int glove = v.tint(0xFFD02020);
+            Shapes.box(m, vc, -2.6F, -2.0F, -2.6F, 2.6F, 2.6F, 2.6F, glove, b);
+            Shapes.box(m, vc, -2.2F, -3.4F, -2.2F, 2.2F, -2.0F, 2.2F, 0xFFF4F4F4, b);
+            Shapes.box(m, vc, -1.0F, -1.2F, -2.9F, 1.6F, 1.6F, -2.6F, Shapes.mix(glove, 0xFF000000, 0.2F), b);
             break;
          }
          case "Krallen":
-            // Knöchelplatte und drei gebogene, spitz zulaufende Klingen
-            Art.bevel(m, vc, -2.1F, -0.6F, -2.45F, 2.1F, 0.9F, -1.95F, 0.15F, Art.CHARCOAL, b);
             for (int k = -1; k <= 1; k++) {
-               float x = k * 1.15F;
-               Art.gem(m, vc, x, 0.15F, -2.5F, 0.25F, 0.0F, 0.0F, 4, 45.0F, Art.STONE, b);
-               int steel = Art.mix(Art.SILVER, v.tint(Art.SILVER), 0.5F);
-               Art.taper(m, vc, x, 0.4F, -2.3F, 0.32F, x, 3.6F, -2.65F, 0.24F, 4, 45.0F, steel, Math.max(b, 0.8F), true, false);
-               Art.taper(m, vc, x, 3.6F, -2.65F, 0.24F, x, 6.4F, -3.6F, 0.0F, 4, 45.0F, Art.bright(steel, 1.1F), Math.max(b, 0.8F), false, false);
+               Shapes.box(m, vc, k * 0.8F - 0.15F, 0.0F, -2.1F, k * 0.8F + 0.15F, 0.4F, -1.8F, 0xFF808890, b);
+               Shapes.box(m, vc, k * 0.8F - 0.12F, 0.6F, -2.0F, k * 0.8F + 0.12F, 6.0F, -1.9F, 0xFFD8DCE4, Math.max(b, 0.8F));
             }
             break;
          case "Leuchtringe":
-            // goldene Armreifen mit eingesetzten Steinen, drehen sich langsam
-            for (int i = 0; i < 2; i++) {
-               float y = -3.0F + i * 1.3F;
-               Art.ring(m, vc, 0.0F, 0.0F, y, y + 0.55F, 2.2F, 2.65F, 1.0F, 12, t * 40.0F * (i == 0 ? 1 : -1), Art.GOLD, b);
-               for (int k = 0; k < 4; k++) {
-                  double a = Math.toRadians(t * 40.0F * (i == 0 ? 1 : -1) + k * 90.0F + 15.0F);
-                  float gx = (float)Math.cos(a) * 2.7F, gz = (float)Math.sin(a) * 2.7F;
-                  Art.gem(m, vc, gx, y + 0.28F, gz, 0.22F, 0.2F, 0.2F, 4, 0.0F, v.tint(k % 2 == 0 ? Art.SAKURA : 0xFFA8D8FF), Math.max(b, 0.85F));
-               }
-            }
+            Shapes.ring(m, vc, -3.0F, 2.5F, 0.4F, 0.6F, 14, t * 40.0F, 0xFFE8C040, b, false, 1.0F);
             break;
-         case "Zauberlicht": {
-            // schwebender Kristall im Licht
-            float bob = Mth.sin(t * 2.0F) * 0.8F;
-            m.pushPose();
-            m.translate(0.0F, 4.0F + bob, -1.0F);
-            m.rotate(Axis.YP.rotationDegrees(t * 60.0F));
-            Art.gem(m, vc, 0.0F, 0.0F, 0.0F, 0.6F, 0.9F, 0.9F, 5, 0.0F, v.tint(0xFFD8B8FF), Math.max(b, 0.95F));
-            m.popPose();
-            break;
-         }
          default:
       }
    }

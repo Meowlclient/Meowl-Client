@@ -153,6 +153,7 @@ public class PerformanceScreen extends com.lennart.nebula.compat.MeowlBaseScreen
 
    @Override
    public void render(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+      Perf.wantBackground();
       this.rects.clear();
       this.clicks.clear();
       ctx.fill(0, 0, this.width, this.height, 0xB005060C);
